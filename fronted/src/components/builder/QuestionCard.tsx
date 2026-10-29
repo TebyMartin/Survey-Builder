@@ -206,6 +206,10 @@ export default function QuestionCard({
                 id: question.id,
                 data: {
                   type: e.target.value,
+                  isRepeatable:
+                    e.target.value === "COMPOSITE"
+                      ? question.isRepeatable ?? false
+                      : false,
                 },
               })
             }
@@ -225,24 +229,38 @@ export default function QuestionCard({
           />
 
           {question.type === "COMPOSITE" && (
-            <CompositeFieldEditor
-              fields={question.compositeFields ?? []}
-              onChange={(fields) => {
-                const fieldsToSave = fields.map((field) => ({
-                  ...field,
-                  required: true,
-                }));
+            <Stack spacing={2}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={question.isRepeatable ?? false}
+                    onChange={(event) =>
+                      updateQuestion({
+                        id: question.id,
+                        data: { isRepeatable: event.target.checked },
+                      })
+                    }
+                  />
+                }
+                label="Mostrar los campos como una tabla con filas repetibles"
+              />
+              <CompositeFieldEditor
+                fields={question.compositeFields ?? []}
+                onChange={(fields) => {
+                  const fieldsToSave = fields.map((field) => ({
+                    ...field,
+                    required: question.isRepeatable ? false : true,
+                  }));
 
-                console.log("🚨 COMPOSITE QUE VOY A GUARDAR:", fieldsToSave);
-
-                updateQuestion({
-                  id: question.id,
-                  data: {
-                    compositeFields: fieldsToSave,
-                  },
-                });
-              }}
-            />
+                  updateQuestion({
+                    id: question.id,
+                    data: {
+                      compositeFields: fieldsToSave,
+                    },
+                  });
+                }}
+              />
+            </Stack>
           )}
 
           {questions.length > 1 && (

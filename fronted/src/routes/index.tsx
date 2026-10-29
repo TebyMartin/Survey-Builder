@@ -12,6 +12,7 @@ import PublicSurvey from "../pages/PublicSurvey";
 
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "../layouts/DashboardLatout";
+import SupervisorLayout from "../layouts/SupervisorLayout";
 import Surveys from "../pages/Surveys";
 import SurveyCreate from "../pages/SurveyCreate";
 import SurveyBuilder from "../pages/SurveyBuilder";
@@ -44,7 +45,7 @@ export default function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <RoleRoute roles={["ADMIN", "EDITOR", "VIEWER", "SUPERVISOR"]}>
+            <RoleRoute roles={["ADMIN", "EDITOR", "VIEWER"]}>
               <DashboardLayout />
             </RoleRoute>
           </ProtectedRoute>
@@ -167,15 +168,23 @@ export default function AppRoutes() {
             </RoleRoute>
           }
         />
+      </Route>
 
-        <Route
-          path="reviews"
-          element={
+      {/* =====================================================
+          SUPERVISOR (Sin menú lateral)
+         ===================================================== */}
+
+      <Route
+        path="/dashboard/reviews"
+        element={
+          <ProtectedRoute>
             <RoleRoute roles={["SUPERVISOR"]}>
-              <SubmissionReviews />
+              <SupervisorLayout />
             </RoleRoute>
-          }
-        />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<SubmissionReviews />} />
       </Route>
 
       {/* =====================================================

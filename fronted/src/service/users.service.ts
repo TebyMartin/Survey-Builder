@@ -15,8 +15,8 @@ export interface CreateUserData {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
-  role: "ADMIN" | "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
+  password?: string;
+  role: "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
 }
 
 export async function getUsers() {

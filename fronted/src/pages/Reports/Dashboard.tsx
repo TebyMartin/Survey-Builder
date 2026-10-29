@@ -409,6 +409,13 @@ export default function ReportDashboard() {
           <Stack spacing={{ xs: 2, md: 3 }}>
             {data.questionSummaries
               .filter((question: QuestionSummary) => {
+                if (
+                  question.type === "COMPOSITE" &&
+                  question.isRepeatable
+                ) {
+                  return (question.responses?.length ?? 0) > 0;
+                }
+
                 return question.answers.length > 0;
               })
               .map((question: QuestionSummary) => (

@@ -12,6 +12,7 @@ export class QuestionRepository {
     helpText?: string;
     required?: boolean;
     description?: string;
+    isRepeatable?: boolean;
   }) {
     const lastQuestion = await prisma.question.findFirst({
       where: {
@@ -40,6 +41,7 @@ export class QuestionRepository {
       helpText?: string;
       required?: boolean;
       description?: string;
+      isRepeatable?: boolean;
 
       compositeFields?: {
         id?: string;
@@ -188,18 +190,66 @@ export class QuestionRepository {
       order: number;
     }[],
   ) {
-    return prisma.$transaction(
-      questions.map((question) =>
-        prisma.question.update({
-          where: {
-            id: question.id,
-          },
-          data: {
-            order: question.order,
-          },
-        }),
-      ),
-    );
+    if (questions.length === 0) {
+      return;
+    }
+
+    const ids = questions.map((question) => question.id);
+    const orders = questions.map((question) => question.order);
+
+    if (
+      new Set(ids).size !== ids.length ||
+      new Set(orders).size !== orders.length ||
+      orders.some((order) => !Number.isInteger(order) || order < 0) ||
+      Math.max(...orders) !== orders.length - 1
+    ) {
+      throw new Error("El orden de las preguntas no es válido.");
+    }
+
+    return prisma.$transaction(async (transaction) => {
+      const currentQuestions = await transaction.question.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, sectionId: true, order: true },
+      });
+
+      if (currentQuestions.length !== questions.length) {
+        throw new Error("No se encontraron todas las preguntas a reordenar.");
+      }
+
+      const sectionId = currentQuestions[0].sectionId;
+      const sectionQuestions = await transaction.question.findMany({
+        where: { sectionId },
+        select: { id: true, order: true },
+      });
+
+      if (
+        sectionQuestions.length !== questions.length ||
+        sectionQuestions.some((question) => !ids.includes(question.id))
+      ) {
+        throw new Error(
+          "El orden debe incluir todas las preguntas de una misma sección.",
+        );
+      }
+
+      const temporaryOrder = Math.max(
+        ...sectionQuestions.map((question) => question.order),
+        -1,
+      );
+
+      for (const [index, question] of questions.entries()) {
+        await transaction.question.update({
+          where: { id: question.id },
+          data: { order: temporaryOrder + index + 1 },
+        });
+      }
+
+      for (const question of questions) {
+        await transaction.question.update({
+          where: { id: question.id },
+          data: { order: question.order },
+        });
+      }
+    });
   }
   async findById(id: string) {
     return prisma.question.findUnique({
@@ -240,6 +290,7 @@ export class QuestionRepository {
           helpText: question.helpText,
 
           required: question.required,
+          isRepeatable: question.isRepeatable,
 
           order: question.order + 1,
 

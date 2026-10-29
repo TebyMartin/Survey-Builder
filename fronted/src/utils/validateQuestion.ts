@@ -4,6 +4,22 @@ export function validateQuestion(
   question: SurveyQuestion,
   value: unknown,
 ): string | null {
+  if (question.type === "COMPOSITE" && question.isRepeatable) {
+    if (!question.required) return null;
+
+    const values =
+      typeof value === "object" && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
+    const hasAnyValue = Object.values(values).some(
+      (fieldValue) =>
+        Array.isArray(fieldValue) &&
+        fieldValue.some((cell) => String(cell ?? "").trim() !== ""),
+    );
+
+    return hasAnyValue ? null : "Agregue al menos un integrante.";
+  }
+
   const textValue = typeof value === "string" ? value : "";
   // Obligatorio
   if (question.required) {

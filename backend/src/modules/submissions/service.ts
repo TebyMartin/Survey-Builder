@@ -194,6 +194,30 @@ export class SubmissionService {
 
         // Validación de campos internos de COMPOSITE
         if (question.type === "COMPOSITE" && question.compositeFields.length) {
+          if (question.isRepeatable) {
+            const hasAnyValue = (answer?.compositeAnswers ?? []).some(
+              (compositeAnswer) => {
+                if (!compositeAnswer.value) return false;
+                try {
+                  const rows: unknown = JSON.parse(compositeAnswer.value);
+                  return (
+                    Array.isArray(rows) &&
+                    rows.some((value) => String(value ?? "").trim() !== "")
+                  );
+                } catch {
+                  return compositeAnswer.value.trim() !== "";
+                }
+              },
+            );
+
+            if (question.required && !hasAnyValue) {
+              throw new Error(
+                `Agregue al menos un integrante en la pregunta "${question.title}".`,
+              );
+            }
+            continue;
+          }
+
           for (const field of question.compositeFields) {
             if (!field.required) {
               continue;

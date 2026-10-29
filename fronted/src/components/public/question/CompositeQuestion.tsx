@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 
 import type { SurveyQuestion } from "../../../types/surveys";
+import RepeatableCompositeTable from "../../common/RepeatableCompositeTable";
 
 interface Props {
   question: SurveyQuestion;
@@ -43,6 +44,20 @@ export default function CompositeQuestion({
     isRecord(value)
       ? (value as Record<string, CompositeAnswerValue>)
       : {};
+
+  if (question.isRepeatable) {
+    return (
+      <Stack spacing={2}>
+        <Typography fontWeight="bold">{question.title}</Typography>
+        <RepeatableCompositeTable
+          fields={question.compositeFields ?? []}
+          value={values}
+          error={error}
+          onChange={onChange}
+        />
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={2}>

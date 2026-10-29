@@ -53,11 +53,7 @@ export default function LocationMap({ locations }: LocationMapProps) {
           icon={markerIcon}
         >
           <Popup>
-            <strong>Entrevista</strong>
-
-            <br />
-
-            ID: {location.id}
+            <strong>Entrevista N.º {location.formNumber}</strong>
 
             <br />
 
@@ -65,15 +61,9 @@ export default function LocationMap({ locations }: LocationMapProps) {
               <>
                 Entrevistador: {location.interviewer.firstName}{" "}
                 {location.interviewer.lastName}
-                <br />
-                ID del encuestador: {location.interviewerId ?? location.interviewer.id}
               </>
             ) : (
-              <>
-                Entrevistador no identificado
-                <br />
-                ID del encuestador: {location.interviewerId ?? "No disponible"}
-              </>
+              "Entrevistador no identificado"
             )}
 
             <br />

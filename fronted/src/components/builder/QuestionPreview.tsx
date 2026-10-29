@@ -1,4 +1,14 @@
-import { Box, Typography } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 
 import ShortTextPreview from "./question-preview/ShortTextPreview";
 import NumberPreview from "./question-preview/NumberPreview";
@@ -86,6 +96,57 @@ export default function QuestionPreview({ question }: Props) {
 
       case "MATRIX":
         return <QuestionMatrixRowsEditor question={question} />;
+
+      case "COMPOSITE":
+        return question.isRepeatable ? (
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Vista previa de tabla repetible
+            </Typography>
+            {question.compositeFields?.length ? (
+              <TableContainer
+                component={Paper}
+                variant="outlined"
+                sx={{ mt: 1 }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>#</TableCell>
+                      {question.compositeFields.map((field, index) => (
+                        <TableCell key={field.id ?? `${field.label}-${index}`}>
+                          {field.label || `Campo ${index + 1}`}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[1, 2, 3].map((row) => (
+                      <TableRow key={row}>
+                        <TableCell>{row}</TableCell>
+                        {question.compositeFields?.map((field, index) => (
+                          <TableCell
+                            key={field.id ?? `${field.label}-${index}`}
+                            sx={{ height: 40 }}
+                          />
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Agregá campos a la pregunta compuesta para definir las columnas.
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Activá “Mostrar los campos como una tabla con filas repetibles” para
+            usar un cuadro como el de integrantes del hogar.
+          </Typography>
+        );
 
       default:
         return <ShortTextPreview />;

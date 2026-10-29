@@ -398,6 +398,10 @@ function drawComposite(
   question: CompositeQuestionSummary,
   title: string,
 ): number {
+  if (question.isRepeatable) {
+    return drawRepeatableComposite(doc, y, question, title);
+  }
+
   const fields = question.answers ?? [];
 
   if (fields.length === 0) {
@@ -473,6 +477,123 @@ function drawComposite(
   });
 
   return y + 5;
+}
+
+function drawRepeatableComposite(
+  doc: jsPDF,
+  initialY: number,
+  question: CompositeQuestionSummary,
+  title: string,
+): number {
+  const fields = question.repeatableFields ?? [];
+  const responses = question.responses ?? [];
+
+  if (fields.length === 0 || responses.length === 0) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT_COLOR);
+    doc.text(
+      fields.length === 0
+        ? "La tabla no tiene columnas configuradas"
+        : "Sin respuestas registradas",
+      22,
+      initialY,
+    );
+    return initialY + 12;
+  }
+
+  let y = initialY;
+  const tableX = MARGIN_X + 4;
+  const tableWidth = CONTENT_WIDTH - 8;
+  const numberColumnWidth = 12;
+  const fieldColumnWidth =
+    (tableWidth - numberColumnWidth) / fields.length;
+  const pageBottom = PAGE_HEIGHT - BOTTOM_MARGIN;
+  const headers = ["#", ...fields.map((field) => field.label)];
+
+  const drawTableHeader = () => {
+    const headerLines = headers.map((header, index) =>
+      doc.splitTextToSize(
+        header || "Campo",
+        (index === 0 ? numberColumnWidth : fieldColumnWidth) - 4,
+      ),
+    );
+    const headerHeight =
+      Math.max(...headerLines.map((lines) => lines.length), 1) * 4 + 4;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_COLOR);
+    doc.setDrawColor(...BORDER);
+
+    let x = tableX;
+    headerLines.forEach((lines, index) => {
+      const width = index === 0 ? numberColumnWidth : fieldColumnWidth;
+      doc.rect(x, y, width, headerHeight, "S");
+      doc.text(lines, x + 2, y + 4);
+      x += width;
+    });
+
+    y += headerHeight;
+  };
+
+  responses.forEach((response) => {
+    if (y + 18 > pageBottom) {
+      y = drawNewPage(doc, title);
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...PURPLE);
+    const interviewLabel = `Entrevista N.º ${response.interviewNumber ?? "sin número"}`;
+    doc.text(interviewLabel, tableX, y);
+    y += 6;
+
+    drawTableHeader();
+
+    response.rows.forEach((row, rowIndex) => {
+      const values = [
+        String(rowIndex + 1),
+        ...fields.map((field) => String(row[field.id] ?? "")),
+      ];
+      const lines = values.map((value, index) =>
+        doc.splitTextToSize(
+          value,
+          (index === 0 ? numberColumnWidth : fieldColumnWidth) - 4,
+        ),
+      );
+      const rowHeight = Math.max(...lines.map((cellLines) => cellLines.length), 1) * 4 + 4;
+
+      if (y + rowHeight > pageBottom) {
+        y = drawNewPage(doc, title);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...PURPLE);
+        doc.text(`${interviewLabel} (continuación)`, tableX, y);
+        y += 6;
+        drawTableHeader();
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...TEXT_COLOR);
+      doc.setDrawColor(...BORDER);
+
+      let x = tableX;
+      lines.forEach((cellLines, index) => {
+        const width = index === 0 ? numberColumnWidth : fieldColumnWidth;
+        doc.rect(x, y, width, rowHeight, "S");
+        doc.text(cellLines, x + 2, y + 4);
+        x += width;
+      });
+
+      y += rowHeight;
+    });
+
+    y += 7;
+  });
+
+  return y + 4;
 }
 
 /**

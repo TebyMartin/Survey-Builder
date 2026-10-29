@@ -6,6 +6,7 @@ import { Button, Stack } from "@mui/material";
 import { Select, OutlinedInput } from "@mui/material";
 import { Box } from "@mui/material";
 import type { SurveyQuestion } from "../../types/surveys";
+import RepeatableCompositeTable from "../common/RepeatableCompositeTable";
 
 interface Props {
   question: SurveyQuestion;
@@ -318,6 +319,19 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
 
     case "COMPOSITE":
       console.log("🟣 COMPOSITE ENTREVISTADOR:", question);
+
+      if (question.isRepeatable) {
+        return (
+          <Stack spacing={2}>
+            <Typography fontWeight="bold">{question.title}</Typography>
+            <RepeatableCompositeTable
+              fields={question.compositeFields ?? []}
+              value={valueRecord}
+              onChange={(updated) => onChange(question.id, updated)}
+            />
+          </Stack>
+        );
+      }
 
       return (
         <Stack spacing={2}>

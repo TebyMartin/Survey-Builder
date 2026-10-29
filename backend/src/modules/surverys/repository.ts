@@ -253,6 +253,7 @@ export class SurveyRepository {
               helpText: questionData.helpText,
 
               required: questionData.required ?? false,
+              isRepeatable: questionData.isRepeatable ?? false,
 
               minLength: questionData.minLength,
 
@@ -684,6 +685,8 @@ export class SurveyRepository {
                 helpText: question.helpText,
 
                 required: question.required,
+
+                isRepeatable: question.isRepeatable,
 
                 minLength: question.minLength,
 

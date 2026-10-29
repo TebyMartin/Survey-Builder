@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Box, Button, MenuItem, Stack, TextField } from "@mui/material";
 
 import { toast } from "react-hot-toast";
 
-import type { CreateUserData } from "../../service/users.service";
+import type { CreateUserData, User } from "../../service/users.service";
 
 interface Props {
+  user?: User | null;
   loading?: boolean;
   onSubmit: (data: CreateUserData) => Promise<void>;
   onCancel: () => void;
@@ -28,34 +29,68 @@ const fieldSx = {
 };
 
 export default function UserForm({
+  user,
   loading = false,
   onSubmit,
   onCancel,
 }: Props) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const isEditing = Boolean(user);
+
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
-  const [role, setRole] =
-    useState<CreateUserData["role"]>("INTERVIEWER");
+  const [role, setRole] = useState<CreateUserData["role"]>(
+    user?.role && user.role !== "ADMIN"
+      ? (user.role as CreateUserData["role"])
+      : "INTERVIEWER",
+  );
+
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName);
+      setLastName(user.lastName);
+      setEmail(user.email);
+      setPassword("");
+      if (user.role !== "ADMIN") {
+        setRole(user.role as CreateUserData["role"]);
+      }
+    } else {
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setRole("INTERVIEWER");
+    }
+  }, [user]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     try {
-      await onSubmit({
+      const payload: CreateUserData = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
-        password,
         role,
-      });
+      };
 
-      toast.success("Usuario creado correctamente");
+      if (password.trim()) {
+        payload.password = password.trim();
+      }
+
+      await onSubmit(payload);
+
+      toast.success(
+        isEditing
+          ? "Usuario actualizado correctamente"
+          : "Usuario creado correctamente",
+      );
 
       onCancel();
-    } catch {
-      toast.error("Error al crear el usuario");
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || (isEditing ? "Error al actualizar el usuario" : "Error al crear el usuario");
+      toast.error(msg);
     }
   };
 
@@ -108,12 +143,21 @@ export default function UserForm({
 
         {/* CONTRASEÑA */}
         <TextField
-          label="Contraseña"
+          label={
+            isEditing
+              ? "Nueva contraseña (opcional)"
+              : "Contraseña"
+          }
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           fullWidth
-          required
+          required={!isEditing}
+          helperText={
+            isEditing
+              ? "Dejá en blanco si no querés cambiar la contraseña"
+              : undefined
+          }
           sx={fieldSx}
         />
 
@@ -128,8 +172,6 @@ export default function UserForm({
           fullWidth
           sx={fieldSx}
         >
-          <MenuItem value="ADMIN">Administrador</MenuItem>
-
           <MenuItem value="EDITOR">Editor</MenuItem>
 
           <MenuItem value="INTERVIEWER">Encuestador</MenuItem>
@@ -178,7 +220,11 @@ export default function UserForm({
               },
             }}
           >
-            {loading ? "Guardando..." : "Crear usuario"}
+            {loading
+              ? "Guardando..."
+              : isEditing
+                ? "Guardar cambios"
+                : "Crear usuario"}
           </Button>
         </Stack>
       </Stack>

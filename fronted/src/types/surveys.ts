@@ -74,6 +74,7 @@ export interface SurveyQuestion {
   type: QuestionType;
 
   required: boolean;
+  isRepeatable?: boolean;
 
   order: number;
 

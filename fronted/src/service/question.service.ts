@@ -23,6 +23,7 @@ export async function updateQuestion(
     title?: string;
     type?: string;
     required?: boolean;
+    isRepeatable?: boolean;
     description?: string;
     compositeFields?: CompositeField[];
     showWhenQuestionId?: string | null;

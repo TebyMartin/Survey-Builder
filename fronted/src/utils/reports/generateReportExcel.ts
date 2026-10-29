@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import type {
   CompositeFieldBaseSummary,
+  CompositeQuestionSummary,
   ReportDashboard,
   ReportSubmissionQuestion,
 } from "../../types/report";
@@ -125,6 +126,10 @@ export async function generateReportExcel(data: ReportDashboard) {
       // =====================================
 
       if (question.type === "COMPOSITE") {
+        if (question.isRepeatable) {
+          return;
+        }
+
         (question.compositeFields ?? []).forEach((field) => {
           columns.push({
             key: `${question.id}_${field.id}`,
@@ -243,7 +248,11 @@ export async function generateReportExcel(data: ReportDashboard) {
                 const labels = parsed
                   .map((optionId: unknown) => {
                     const option = field?.options?.find(
-                      (item) => item.id === String(optionId),
+                      (item) =>
+                        item.id === String(optionId) ||
+                        item.value === String(optionId) ||
+                        item.label?.toLowerCase() ===
+                          String(optionId).toLowerCase(),
                     );
 
                     if (!option) {
@@ -279,7 +288,10 @@ export async function generateReportExcel(data: ReportDashboard) {
             );
 
             const option = field?.options?.find(
-              (item) => item.id === value,
+              (item) =>
+                item.id === value ||
+                item.value === value ||
+                item.label?.toLowerCase() === value.toLowerCase(),
             );
 
             if (option?.isOther) {
@@ -427,6 +439,92 @@ export async function generateReportExcel(data: ReportDashboard) {
         row: sheet.rowCount,
         column: columns.length,
       },
+    };
+  }
+
+  // ==========================
+  // TABLAS COMPUESTAS REPETIBLES
+  // ==========================
+
+  const repeatableQuestions = data.questionSummaries.filter(
+    (question): question is CompositeQuestionSummary =>
+      question.type === "COMPOSITE" && question.isRepeatable === true,
+  );
+  const usedRepeatableTitles = new Map<string, number>();
+  const repeatableColumns = repeatableQuestions.flatMap((question) =>
+    (question.repeatableFields ?? []).map((field) => {
+      const baseTitle = [question.title.trim(), field.label.trim()]
+        .filter(Boolean)
+        .join(" - ");
+      const title = baseTitle || "Campo";
+      const duplicateCount = usedRepeatableTitles.get(title) ?? 0;
+      usedRepeatableTitles.set(title, duplicateCount + 1);
+
+      return {
+        questionId: question.id,
+        fieldId: field.id,
+        title: duplicateCount === 0 ? title : `${title} (${duplicateCount + 1})`,
+      };
+    }),
+  );
+
+  if (repeatableColumns.length > 0) {
+    const repeatableSheet = workbook.addWorksheet("Tablas repetibles");
+    const headers = [
+      "N.º entrevista",
+      "Pregunta",
+      "Fila",
+      ...repeatableColumns.map((column) => column.title),
+    ];
+
+    repeatableSheet.addRow(headers);
+    repeatableSheet.getRow(1).font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    repeatableSheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "673AB7" },
+    };
+    repeatableSheet.getRow(1).alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: true,
+    };
+
+    repeatableQuestions.forEach((question) => {
+      (question.responses ?? []).forEach((response) => {
+        response.rows.forEach((values, rowIndex) => {
+          repeatableSheet.addRow([
+            response.interviewNumber ?? "",
+            question.title,
+            rowIndex + 1,
+            ...repeatableColumns.map((column) =>
+              column.questionId === question.id
+                ? (values[column.fieldId] ?? "")
+                : "",
+            ),
+          ]);
+        });
+      });
+    });
+
+    repeatableSheet.getColumn(1).width = 16;
+    repeatableSheet.getColumn(2).width = 32;
+    repeatableSheet.getColumn(3).width = 10;
+    repeatableColumns.forEach((_, index) => {
+      repeatableSheet.getColumn(index + 4).width = 28;
+    });
+    repeatableSheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.alignment = { vertical: "top", wrapText: true };
+      }
+    });
+    repeatableSheet.views = [{ state: "frozen", ySplit: 1 }];
+    repeatableSheet.autoFilter = {
+      from: "A1",
+      to: { row: repeatableSheet.rowCount, column: headers.length },
     };
   }
 

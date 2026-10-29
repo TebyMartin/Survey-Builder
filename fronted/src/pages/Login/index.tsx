@@ -59,7 +59,10 @@ export default function Login() {
 
         const redirectByRole = {
           ADMIN: "/dashboard",
+          EDITOR: "/dashboard",
+          VIEWER: "/dashboard",
           INTERVIEWER: "/interviewer",
+          SUPERVISOR: "/dashboard/reviews",
         };
 
         navigate(

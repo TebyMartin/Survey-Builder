@@ -55,14 +55,15 @@ export class UsersRepository {
     });
   }
 
-  update(id: string, data: any, organizationId: string) {
-    return prisma.user.updateMany({
+  async update(id: string, data: any, organizationId: string) {
+    await prisma.user.updateMany({
       where: {
         id,
         organizationId,
       },
       data,
     });
+    return this.findById(id, organizationId);
   }
 
   desactivate(id: string, organizationId: string) {

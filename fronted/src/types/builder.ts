@@ -21,6 +21,7 @@ export interface Question {
   title: string;
   type: string;
   required: boolean;
+  isRepeatable?: boolean;
   order: number;
   description?: string;
   placeholder?: string;

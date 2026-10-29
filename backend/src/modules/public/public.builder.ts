@@ -28,6 +28,7 @@ export class PublicBuilder {
             placeholder: question.placeholder,
             helpText: question.helpText,
             required: question.required,
+            isRepeatable: question.isRepeatable,
 
             // ==========================================
             // CONDICIÓN

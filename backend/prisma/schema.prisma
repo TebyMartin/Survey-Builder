@@ -222,6 +222,7 @@ model Question {
 
   order    Int
   required Boolean @default(false)
+  isRepeatable Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -175,6 +175,76 @@ export class ReportsBuilder {
         }
 
         if (question.type === "COMPOSITE") {
+          if (question.isRepeatable) {
+            const responses = answerList
+              .map((answer: any) => {
+                const fieldValues = new Map<string, string[]>();
+                let rowCount = 0;
+
+                for (const field of question.compositeFields ?? []) {
+                  const storedValue = (answer.compositeAnswers ?? []).find(
+                    (item: any) => item.fieldId === field.id,
+                  )?.value;
+                  let values: string[] = [];
+
+                  if (typeof storedValue === "string") {
+                    try {
+                      const parsed: unknown = JSON.parse(storedValue);
+                      values = Array.isArray(parsed)
+                        ? parsed.map((value) => String(value ?? ""))
+                        : [storedValue];
+                    } catch {
+                      values = [storedValue];
+                    }
+                  }
+
+                  fieldValues.set(field.id, values);
+                  rowCount = Math.max(rowCount, values.length);
+                }
+
+                const rows = Array.from({ length: rowCount }, (_, index) =>
+                  Object.fromEntries(
+                    (question.compositeFields ?? []).map((field: any) => {
+                      const value = fieldValues.get(field.id)?.[index] ?? "";
+                      const option = (field.options ?? []).find(
+                        (item: any) =>
+                          item.value === value || item.id === value,
+                      );
+                      return [field.id, option?.label ?? value];
+                    }),
+                  ),
+                ).filter((row) =>
+                  Object.values(row).some(
+                    (value) => String(value ?? "").trim() !== "",
+                  ),
+                );
+
+                return {
+                  interviewNumber: answer.submission?.formNumber ?? null,
+                  rows,
+                };
+              })
+              .filter((response: any) => response.rows.length > 0);
+
+            return {
+              id: question.id,
+              title: question.title,
+              type: question.type,
+              isRepeatable: true,
+              firstAnswerAt,
+              answered: responses.length,
+              total: data.total,
+              answers: [],
+              repeatableFields: (question.compositeFields ?? []).map(
+                (field: any) => ({
+                  id: field.id,
+                  label: field.label,
+                }),
+              ),
+              responses,
+            };
+          }
+
           const answers = (question.compositeFields ?? []).map((field: any) => {
             const values = answerList
               .flatMap((answer: any) => answer.compositeAnswers ?? [])
@@ -232,7 +302,14 @@ export class ReportsBuilder {
               const counts: Record<string, number> = {};
 
               values.forEach((value: string) => {
-                counts[value] = (counts[value] ?? 0) + 1;
+                const matching = (field.options ?? []).find(
+                  (opt: any) =>
+                    opt.value === value ||
+                    opt.id === value ||
+                    opt.label?.toLowerCase() === value.toLowerCase(),
+                );
+                const label = matching?.label ?? value;
+                counts[label] = (counts[label] ?? 0) + 1;
               });
 
               return {
@@ -263,8 +340,15 @@ export class ReportsBuilder {
 
                   if (selectedOptions) {
                     selectedOptions.forEach((item: unknown) => {
-                      const option = String(item);
-                      counts[option] = (counts[option] ?? 0) + 1;
+                      const itemStr = String(item);
+                      const matching = (field.options ?? []).find(
+                        (opt: any) =>
+                          opt.value === itemStr ||
+                          opt.id === itemStr ||
+                          opt.label?.toLowerCase() === itemStr.toLowerCase(),
+                      );
+                      const label = matching?.label ?? itemStr;
+                      counts[label] = (counts[label] ?? 0) + 1;
                     });
 
                     return;
@@ -273,7 +357,14 @@ export class ReportsBuilder {
                   // Si no es JSON, lo tratamos como valor normal.
                 }
 
-                counts[value] = (counts[value] ?? 0) + 1;
+                const matching = (field.options ?? []).find(
+                  (opt: any) =>
+                    opt.value === value ||
+                    opt.id === value ||
+                    opt.label?.toLowerCase() === value.toLowerCase(),
+                );
+                const label = matching?.label ?? value;
+                counts[label] = (counts[label] ?? 0) + 1;
               });
 
               return {
@@ -517,7 +608,10 @@ export class ReportsBuilder {
 
       .filter(
         (question: any) =>
-          question && question.answers && question.answers.length > 0,
+          question &&
+          (question.isRepeatable
+            ? question.responses?.length > 0
+            : question.answers && question.answers.length > 0),
       );
 
     // ==========================================
@@ -574,6 +668,73 @@ export class ReportsBuilder {
                 return {
                   ...answer,
                   value: values.join(", "),
+                };
+              }
+
+              // =====================================
+              // COMPOSITE
+              // =====================================
+
+              if (answer.question?.type === "COMPOSITE") {
+                const compositeAnswers = (answer.compositeAnswers ?? []).map(
+                  (ca: any) => {
+                    const field = answer.question?.compositeFields?.find(
+                      (f: any) => f.id === ca.fieldId,
+                    );
+                    let val = String(ca.value ?? "").trim();
+                    if (
+                      field &&
+                      ["RADIO", "SELECT", "SCALE"].includes(field.type)
+                    ) {
+                      const matching = (field.options ?? []).find(
+                        (opt: any) =>
+                          opt.value === val ||
+                          opt.id === val ||
+                          opt.label?.toLowerCase() === val.toLowerCase(),
+                      );
+                      if (matching) {
+                        val = matching.label;
+                      }
+                    } else if (
+                      field &&
+                      ["CHECKBOX", "MULTISELECT"].includes(field.type)
+                    ) {
+                      try {
+                        const parsed = JSON.parse(val);
+                        const items = Array.isArray(parsed)
+                          ? parsed
+                          : Array.isArray(parsed?.options)
+                            ? parsed.options
+                            : null;
+                        if (items) {
+                          val = items
+                            .map((item: any) => {
+                              const itemStr = String(item);
+                              const matching = (field.options ?? []).find(
+                                (opt: any) =>
+                                  opt.value === itemStr ||
+                                  opt.id === itemStr ||
+                                  opt.label?.toLowerCase() ===
+                                    itemStr.toLowerCase(),
+                              );
+                              return matching?.label ?? itemStr;
+                            })
+                            .join(", ");
+                        }
+                      } catch {
+                        // Not JSON
+                      }
+                    }
+                    return {
+                      ...ca,
+                      value: val,
+                    };
+                  },
+                );
+
+                return {
+                  ...answer,
+                  compositeAnswers,
                 };
               }
 
@@ -645,6 +806,7 @@ export class ReportsBuilder {
       )
       .map((submission: any) => ({
         id: submission.id,
+        formNumber: submission.formNumber,
         surveyId: submission.surveyId,
         assignmentId: submission.assignmentId,
         interviewerId: submission.interviewerId,

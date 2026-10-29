@@ -36,6 +36,7 @@ import {
 
 import { useReorderQuestions } from "../../hooks/useReorderQuestions";
 import type { SvgIconProps } from "@mui/material";
+import { useSnackbar } from "notistack";
 
 interface Props {
   section: Section;
@@ -59,6 +60,7 @@ export default function SectionCard({ section, dragHandle }: Props) {
 
   const mutation = useCreateQuestion();
   const reorderMutation = useReorderQuestions();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     if (
@@ -102,6 +104,12 @@ export default function SectionCard({ section, dragHandle }: Props) {
         id: question.id,
         order: index,
       })),
+      {
+        onError: () =>
+          enqueueSnackbar("No se pudo guardar el nuevo orden de las preguntas.", {
+            variant: "error",
+          }),
+      },
     );
   }
 

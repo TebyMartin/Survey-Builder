@@ -37,6 +37,12 @@ export interface CompositeFieldBaseSummary {
 export interface CompositeQuestionSummary extends BaseQuestionSummary {
   type: "COMPOSITE";
   answers: CompositeFieldBaseSummary[];
+  isRepeatable?: boolean;
+  repeatableFields?: { id: string; label: string }[];
+  responses?: {
+    interviewNumber: number | null;
+    rows: Record<string, string>[];
+  }[];
 }
 
 /* =========================
@@ -80,6 +86,7 @@ export interface MatrixQuestionSummary extends BaseQuestionSummary {
 export interface ReportOption {
   id: string;
   label: string;
+  value?: string;
   isOther?: boolean;
 }
 
@@ -87,6 +94,7 @@ export interface ReportSubmissionQuestion {
   id: string;
   title: string;
   type: string;
+  isRepeatable?: boolean;
   options?: ReportOption[];
   matrixRows?: {
     id: string;
@@ -155,6 +163,7 @@ export interface ReportStats {
 
 export interface ReportLocation {
   id: string;
+  formNumber: number;
   surveyId: string;
   assignmentId: string | null;
   interviewerId: string | null;

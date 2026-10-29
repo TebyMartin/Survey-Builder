@@ -69,6 +69,7 @@ export class ReportsRepository {
       },
       select: {
         id: true,
+        formNumber: true,
         surveyId: true,
         assignmentId: true,
         interviewerId: true,
@@ -210,6 +211,11 @@ export class ReportsRepository {
                 field: true,
               },
             },
+            submission: {
+              select: {
+                formNumber: true,
+              },
+            },
           },
         },
       },
@@ -257,6 +263,7 @@ export class ReportsRepository {
       },
       select: {
         id: true,
+        title: true,
       },
     });
 
@@ -264,7 +271,7 @@ export class ReportsRepository {
       throw new Error("La encuesta no existe o no pertenece a esta organización.");
     }
 
-    return prisma.submission.findMany({
+    const submissions = await prisma.submission.findMany({
       where: {
         surveyId: survey.id,
       },
@@ -284,8 +291,10 @@ export class ReportsRepository {
         },
       },
       orderBy: {
-        startedAt: "asc",
+        formNumber: "asc",
       },
     });
+
+    return { survey, submissions };
   }
 }

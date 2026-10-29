@@ -9,14 +9,20 @@ import {
   Select,
   Stack,
 } from "@mui/material";
+import { useState } from "react";
 import type { CompositeField } from "../../types/surveys";
 import type { Question } from "../../types/builder";
+import RepeatableCompositeTable from "../common/RepeatableCompositeTable";
 
 interface Props {
   question: Question;
 }
 
 export default function PreviewQuestion({ question }: Props) {
+  const [repeatableValue, setRepeatableValue] = useState<
+    Record<string, string[]>
+  >({});
+
   return (
     <Stack spacing={1}>
       <Typography fontWeight="bold">
@@ -43,12 +49,16 @@ export default function PreviewQuestion({ question }: Props) {
         </Typography>
       )}
 
-      {renderQuestion(question)}
+      {renderQuestion(question, repeatableValue, setRepeatableValue)}
     </Stack>
   );
 }
 
-function renderQuestion(question: Question) {
+function renderQuestion(
+  question: Question,
+  repeatableValue: Record<string, string[]>,
+  onRepeatableChange: (value: Record<string, string[]>) => void,
+) {
   switch (question.type) {
     case "SHORT_TEXT":
       return <TextField fullWidth placeholder={question.placeholder} />;
@@ -146,6 +156,24 @@ function renderQuestion(question: Question) {
       );
 
     case "COMPOSITE":
+      if (question.isRepeatable) {
+        const fields = (question.compositeFields ?? [])
+          .slice()
+          .sort((a, b) => a.order - b.order);
+
+        return fields.length ? (
+          <RepeatableCompositeTable
+            fields={fields}
+            value={repeatableValue}
+            onChange={onRepeatableChange}
+          />
+        ) : (
+          <Typography color="text.secondary">
+            Esta tabla todavía no tiene columnas configuradas.
+          </Typography>
+        );
+      }
+
       return (
         <Stack spacing={3}>
           {question.compositeFields

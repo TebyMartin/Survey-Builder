@@ -93,6 +93,8 @@ export const builderSchema = z
 
     required: z.boolean(),
 
+    isRepeatable: z.boolean().optional().default(false),
+
     minLength: z.number().nullable().optional(),
 
     maxLength: z.number().nullable().optional(),
@@ -152,6 +154,12 @@ export const builderSchema = z
           message: "Una pregunta compleja no debe tener opciones directamente.",
         });
       }
+    } else if (question.isRepeatable) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["isRepeatable"],
+        message: "Solo las preguntas compuestas pueden tener filas repetibles.",
+      });
     }
 
     // -----------------------------------------

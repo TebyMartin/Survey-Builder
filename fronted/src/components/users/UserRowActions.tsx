@@ -122,6 +122,7 @@ export default function UserRowActions({ user }: Props) {
       <UserFormDialog
         open={openEdit}
         onClose={() => setOpenEdit(false)}
+        user={user}
       />
       <ConfirmDialog
         open={confirmOpen}

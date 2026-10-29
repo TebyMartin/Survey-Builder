@@ -12,6 +12,7 @@ export class QuestionService {
     helpText?: string;
     required?: boolean;
     description?: string;
+    isRepeatable?: boolean;
   }) {
     return repository.create(data);
   }
@@ -24,6 +25,7 @@ export class QuestionService {
       helpText?: string;
       required?: boolean;
       description?: string;
+      isRepeatable?: boolean;
 
       compositeFields?: {
         id?: string;
