@@ -1,0 +1,449 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  INTERVIEWER
+  VIEWER
+}
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+model Organization {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  isActive Boolean @default(true)
+
+  logoUrl        String?
+  primaryColor   String? @default("#1976D2")
+  secondaryColor String? @default("#9C27B0")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  surveys Survey[]
+
+  @@map("organizations")
+}
+model User {
+  id String @id @default(uuid())
+
+  organizationId String
+
+  firstName String
+  lastName  String
+
+  email    String @unique
+  password String
+
+  role UserRole
+
+  isActive Boolean @default(true)
+
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  assignments SurveyAssignment[]
+
+  createdSurveys Survey[] @relation("SurveyCreator")
+
+  submissions Submission[] @relation("InterviewerSubmissions")
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+model SurveyAssignment {
+  id String @id @default(uuid())
+
+  surveyId String
+  userId   String
+
+  status AssignmentStatus @default(PENDING)
+   // NUEVO
+  targetResponses Int @default(1)
+
+  // NUEVO
+  completedResponses Int @default(0)
+  assignedAt  DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  dueDate     DateTime?
+
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id])
+  submissions Submission[]
+ 
+  @@index([surveyId])
+  @@index([userId])
+  @@map("survey_assignments")
+}
+
+enum AssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Survey {
+  id String @id @default(uuid())
+
+  organizationId String
+  createdById    String
+
+  title       String
+  description String?
+
+  version Int @default(1)
+
+  publicToken String @unique @default(cuid())
+
+  isTemplate     Boolean   @default(false)
+  deletedAt      DateTime?
+  allowAnonymous Boolean   @default(false)
+
+  estimatedTime Int?
+
+  status SurveyStatus @default(DRAFT)
+
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  createdBy   User               @relation("SurveyCreator", fields: [createdById], references: [id])
+  sections    Section[]
+  assignments SurveyAssignment[]
+  submissions Submission[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdById])
+  @@index([title])
+  @@map("surveys")
+}
+
+model Section {
+  id String @id @default(uuid())
+
+  surveyId String
+
+  title       String
+  description String?
+
+  order Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  survey Survey @relation(fields: [surveyId], references: [id])
+
+  questions Question[]
+
+  @@unique([surveyId, order])
+  @@index([surveyId])
+  @@map("sections")
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  NUMBER
+  EMAIL
+  PHONE
+  DATE
+  TIME
+  DATETIME
+  RADIO
+  CHECKBOX
+  SELECT
+  MULTISELECT
+  SCALE
+  NPS
+  FILE
+  IMAGE
+  GPS
+  SIGNATURE
+  MATRIX
+  COMPOSITE
+}
+
+model Question {
+  id        String @id @default(uuid())
+  sectionId String
+  description String?
+  title       String
+  type        QuestionType
+  placeholder String?
+  helpText    String?
+
+  minLength Int?
+  maxLength Int?
+
+  defaultValue String?
+
+  showWhenQuestionId String?
+  showWhenValue      String?
+
+  minValue Float?
+  maxValue Float?
+
+  order    Int
+  required Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  section    Section             @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  options    QuestionOption[]
+  answers    Answer[]
+  matrixRows QuestionMatrixRow[]
+  compositeFields CompositeField[]
+  @@unique([sectionId, order])
+  @@index([type])
+  @@index([sectionId])
+  @@map("questions")
+}
+
+model CompositeField {
+  id String @id @default(uuid())
+
+  questionId String
+
+  label String
+  type QuestionType
+
+  placeholder String?
+  helpText String?
+
+  minLength Int?
+  maxLength Int?
+
+  minValue Float?
+  maxValue Float?
+
+  defaultValue String?
+
+  required Boolean @default(false)
+
+  order Int
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  options CompositeFieldOption[]
+  answers CompositeAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([questionId, order])
+  @@index([questionId])
+  @@map("composite_fields")
+}
+model CompositeFieldOption {
+  id String @id @default(uuid())
+
+  fieldId String
+
+  label String
+  value String?
+
+  isOther Boolean @default(false)
+  isActive Boolean @default(true)
+
+  order Int
+
+  field CompositeField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fieldId, order])
+  @@index([fieldId])
+  @@map("composite_field_options")
+}
+
+model CompositeAnswer {
+  id String @id @default(uuid())
+
+  answerId String
+  fieldId String
+
+  value String?
+
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  field CompositeField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([answerId, fieldId])
+  @@index([answerId])
+  @@index([fieldId])
+  @@map("composite_answers")
+}
+model QuestionOption {
+  id String @id @default(uuid())
+
+  questionId String
+
+  label String
+
+  value String?
+
+  isOther  Boolean @default(false)
+  isActive Boolean @default(true)
+
+  order Int
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  answers AnswerOption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([questionId, order])
+  @@index([questionId])
+  @@map("question_options")
+}
+
+model QuestionMatrixRow {
+  id         String @id @default(uuid())
+  questionId String
+  label      String
+  value      String?
+  order      Int
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  answers AnswerMatrix[]
+
+  @@unique([questionId, order])
+  @@index([questionId])
+  @@map("question_matrix_rows")
+}
+
+enum SubmissionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+model Submission {
+  id String @id @default(uuid())
+
+  surveyId String
+  assignmentId String?
+  interviewerId   String?
+  respondentName  String?
+  respondentEmail String?
+  status          SubmissionStatus @default(IN_PROGRESS)
+
+  latitude  Float?
+  longitude Float?
+
+  ipAddress  String?
+  deviceInfo String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  survey Survey @relation(fields: [surveyId], references: [id])
+
+  interviewer User? @relation("InterviewerSubmissions", fields: [interviewerId], references: [id])
+  assignment SurveyAssignment? @relation(fields: [assignmentId], references: [id])
+  answers Answer[]
+  @@index([assignmentId])
+  @@index([surveyId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([interviewerId])
+  @@map("submissions")
+}
+
+model Answer {
+  id           String  @id @default(uuid())
+  submissionId String
+  questionId   String
+  value        String?
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  question   Question   @relation(fields: [questionId], references: [id])
+
+  options          AnswerOption[]
+  matrixAnswers    AnswerMatrix[]
+  compositeAnswers CompositeAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([submissionId, questionId])
+}
+model AnswerMatrix {
+  id         String @id @default(uuid())
+  answerId   String
+  rowId      String
+  value      String?
+
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  row QuestionMatrixRow @relation(fields: [rowId], references: [id], onDelete: Cascade)
+
+  @@unique([answerId, rowId])
+  @@index([answerId])
+  @@index([rowId])
+  @@map("answer_matrix")
+}
+
+model AnswerOption {
+  id String @id @default(uuid())
+
+  answerId String
+  questionOptionId String
+
+  value String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answer Answer @relation(fields: [answerId], references: [id])
+  questionOption QuestionOption @relation(fields: [questionOptionId], references: [id])
+
+  @@unique([answerId, questionOptionId])
+  @@index([answerId])
+  @@index([questionOptionId])
+  @@map("answer_options")
+}
