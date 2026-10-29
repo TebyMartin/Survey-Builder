@@ -31,6 +31,7 @@ export interface SurveyOption {
 }
 
 export interface CompositeFieldOption {
+  id?: string;
   label: string;
   value?: string;
   order: number;
@@ -54,10 +55,17 @@ export interface CompositeField {
   options?: CompositeFieldOption[];
 }
 
+export interface SurveyMatrixRow {
+  id: string;
+  label: string;
+  value?: string;
+  order: number;
+}
+
 export interface SurveyQuestion {
-  matrixRows: any;
-  min: number;
-  max: number;
+  matrixRows: SurveyMatrixRow[];
+  min?: number;
+  max?: number;
   id: string;
 
   title: string;
@@ -82,6 +90,8 @@ export interface SurveyQuestion {
 
   options: SurveyOption[];
   compositeFields?: CompositeField[];
+  showWhenQuestionId?: string | null;
+  showWhenValue?: string | null;
 }
 
 export interface SurveySection {

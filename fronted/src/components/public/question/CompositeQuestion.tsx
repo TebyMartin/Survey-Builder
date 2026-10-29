@@ -23,6 +23,16 @@ interface Props {
   onChange: (value: unknown) => void;
 }
 
+type CompositeAnswerValue =
+  | string
+  | number
+  | string[]
+  | { options: string[] };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export default function CompositeQuestion({
   question,
   value,
@@ -30,15 +40,15 @@ export default function CompositeQuestion({
   error,
 }: Props) {
   const values =
-    value && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, any>)
+    isRecord(value)
+      ? (value as Record<string, CompositeAnswerValue>)
       : {};
 
   return (
     <Stack spacing={2}>
       <Typography fontWeight="bold">{question.title}</Typography>
 
-      {question.compositeFields?.map((field: any) => {
+      {question.compositeFields?.map((field) => {
         const fieldValue = values[field.id] ?? "";
 
         const fieldLabel = field.helpText || field.label || "";
@@ -219,7 +229,7 @@ export default function CompositeQuestion({
                     })
                   }
                 >
-                  {field.options?.map((option: any) => (
+                  {field.options?.map((option) => (
                     <FormControlLabel
                       key={option.id ?? option.value}
                       value={option.value}
@@ -232,13 +242,18 @@ export default function CompositeQuestion({
             );
 
           case "CHECKBOX": {
-            const selectedOptions: string[] = fieldValue?.options ?? [];
+            const selectedOptions =
+              isRecord(fieldValue) && Array.isArray(fieldValue.options)
+                ? fieldValue.options.filter(
+                    (option): option is string => typeof option === "string",
+                  )
+                : [];
 
             return (
               <Box key={field.id}>
                 <Typography mb={1}>{fieldLabel}</Typography>
 
-                {field.options?.map((option: any) => {
+                {field.options?.map((option) => {
                   const checked = selectedOptions.includes(option.value);
 
                   return (
@@ -291,7 +306,7 @@ export default function CompositeQuestion({
                   })
                 }
               >
-                {field.options?.map((option: any) => (
+                {field.options?.map((option) => (
                   <MenuItem
                     key={option.id ?? option.value}
                     value={option.value}
@@ -319,7 +334,7 @@ export default function CompositeQuestion({
                     })
                   }
                 >
-                  {field.options?.map((option: any) => (
+                  {field.options?.map((option) => (
                     <MenuItem
                       key={option.id ?? option.value}
                       value={option.value}
@@ -337,7 +352,13 @@ export default function CompositeQuestion({
                 <Typography mb={1}>{fieldLabel}</Typography>
 
                 <Rating
-                  value={fieldValue || 0}
+                  value={
+                    typeof fieldValue === "number"
+                      ? fieldValue
+                      : typeof fieldValue === "string"
+                        ? Number(fieldValue) || 0
+                        : 0
+                  }
                   onChange={(_, newValue) =>
                     onChange({
                       ...values,

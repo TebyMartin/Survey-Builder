@@ -6,6 +6,9 @@ import { useSurveys } from "../../hooks/useSurvey";
 import { useCreateAssignment } from "../../hooks/useAssignments";
 
 import { toast } from "react-hot-toast";
+import { isAxiosError } from "axios";
+import type { User } from "../../service/users.service";
+import type { Survey } from "../../types/surveys";
 
 interface Props {
   onClose: () => void;
@@ -53,8 +56,10 @@ export default function AssignmentForm({ onClose }: Props) {
       toast.success("Asignación creada");
 
       onClose();
-    } catch (err: any) {
-      const message = err?.response?.data?.message;
+    } catch (err: unknown) {
+      const message = isAxiosError<{ message?: string }>(err)
+        ? err.response?.data?.message
+        : undefined;
 
       if (message === "No se puede asignar una encuesta archivada.") {
         toast.error("Esta encuesta está archivada y no puede asignarse.");
@@ -68,11 +73,11 @@ export default function AssignmentForm({ onClose }: Props) {
   // Solamente se pueden asignar encuestas publicadas.
   // Las archivadas, cerradas o en borrador no aparecen.
   const assignableSurveys = surveys.filter(
-    (survey: any) => survey.status === "PUBLISHED",
+    (survey: Survey) => survey.status === "PUBLISHED",
   );
 
   // Solamente mostramos usuarios encuestadores.
-  const interviewers = users.filter((user: any) => user.role === "INTERVIEWER");
+  const interviewers = users.filter((user: User) => user.role === "INTERVIEWER");
 
   return (
     <Stack
@@ -95,7 +100,7 @@ export default function AssignmentForm({ onClose }: Props) {
             No hay encuestas publicadas disponibles
           </MenuItem>
         ) : (
-          assignableSurveys.map((survey: any) => (
+          assignableSurveys.map((survey: Survey) => (
             <MenuItem key={survey.id} value={survey.id}>
               {survey.title}
             </MenuItem>
@@ -116,7 +121,7 @@ export default function AssignmentForm({ onClose }: Props) {
             No hay encuestadores disponibles
           </MenuItem>
         ) : (
-          interviewers.map((user: any) => (
+          interviewers.map((user: User) => (
             <MenuItem key={user.id} value={user.id}>
               {user.firstName} {user.lastName}
             </MenuItem>

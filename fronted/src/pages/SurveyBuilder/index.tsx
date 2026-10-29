@@ -1,12 +1,11 @@
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
+import { useState } from "react";
 
 import BuilderHeader from "../../components/builder/BuilderHeader";
 import BuilderToolbar from "../../components/builder/BuilderToolbar";
 import EmptyBuilder from "../../components/builder/EmptyBuilder";
-import { useEffect, useState } from "react";
-
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
 
 import {
   SortableContext,
@@ -18,20 +17,25 @@ import SortableSection from "../../components/builder/SortableSection";
 
 import { useReorderSections } from "../../hooks/useReorderSections";
 import { useBuilder } from "../../hooks/useBuilder";
+import type { Section } from "../../types/builder";
 
 export default function SurveyBuilder() {
   const { id } = useParams();
 
-  const { data, isLoading } = useBuilder(id!);
-  const [sections, setSections] = useState<any[]>([]);
+  if (!id) {
+    return <Typography>No se encontró la encuesta.</Typography>;
+  }
 
+  return <SurveyBuilderContent key={id} id={id} />;
+}
+
+function SurveyBuilderContent({ id }: { id: string }) {
+  const { data, isLoading } = useBuilder(id);
+  const [reorderedSections, setReorderedSections] = useState<Section[] | null>(
+    null,
+  );
+  const sections = reorderedSections ?? data?.sections ?? [];
   const reorderMutation = useReorderSections();
-
-  useEffect(() => {
-    if (data) {
-      setSections(data.sections);
-    }
-  }, [data]);
 
   if (isLoading) {
     return <CircularProgress />;
@@ -40,7 +44,7 @@ export default function SurveyBuilder() {
   if (!data) {
     return <Typography>No se encontró la encuesta.</Typography>;
   }
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (!over) return;
@@ -51,9 +55,11 @@ export default function SurveyBuilder() {
 
     const newIndex = sections.findIndex((s) => s.id === over.id);
 
+    if (oldIndex < 0 || newIndex < 0) return;
+
     const reordered = arrayMove(sections, oldIndex, newIndex);
 
-    setSections(reordered);
+    setReorderedSections(reordered);
 
     reorderMutation.mutate(
       reordered.map((section, index) => ({

@@ -1,6 +1,21 @@
 import { Card, CardContent, Typography, List, ListItem } from "@mui/material";
 
-export default function RecentResponses({ responses }: any) {
+interface RecentResponse {
+  id: string;
+  interviewer?: {
+    firstName: string;
+    lastName: string;
+  } | null;
+  survey: {
+    title: string;
+  };
+}
+
+interface Props {
+  responses: RecentResponse[];
+}
+
+export default function RecentResponses({ responses }: Props) {
   return (
     <Card sx={{ borderRadius: 4, height: "100%" }}>
       <CardContent>
@@ -9,7 +24,7 @@ export default function RecentResponses({ responses }: any) {
         </Typography>
 
         <List>
-          {responses.map((response: any) => (
+          {responses.map((response) => (
             <ListItem
               key={response.id}
               sx={{

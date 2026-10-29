@@ -27,7 +27,7 @@ import QuestionTypeDialog from "./QuestionTypeDialog";
 import SortableQuestion from "./SortableQuestion";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useDuplicateSection } from "../../hooks/useDuplicateSection";
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -35,15 +35,15 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useReorderQuestions } from "../../hooks/useReorderQuestions";
+import type { SvgIconProps } from "@mui/material";
 
 interface Props {
   section: Section;
-  dragHandle?: any;
+  dragHandle?: SvgIconProps;
 }
 
 export default function SectionCard({ section, dragHandle }: Props) {
   const [open, setOpen] = useState(false);
-  const [questions, setQuestions] = useState(section.questions);
   const [title, setTitle] = useState(section.title);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [description, setDescription] = useState(section.description ?? "");
@@ -61,10 +61,6 @@ export default function SectionCard({ section, dragHandle }: Props) {
   const reorderMutation = useReorderQuestions();
 
   useEffect(() => {
-    setQuestions(section.questions);
-  }, [section.questions]);
-
-  useEffect(() => {
     if (
       debouncedTitle === section.title &&
       debouncedDescription === (section.description ?? "")
@@ -79,21 +75,27 @@ export default function SectionCard({ section, dragHandle }: Props) {
         description: debouncedDescription,
       },
     });
-  }, [debouncedTitle, debouncedDescription]);
+  }, [
+    debouncedTitle,
+    debouncedDescription,
+    section.id,
+    section.title,
+    section.description,
+    updateSectionMutation,
+  ]);
 
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (!over) return;
 
     if (active.id === over.id) return;
 
-    const oldIndex = questions.findIndex((q) => q.id === active.id);
-    const newIndex = questions.findIndex((q) => q.id === over.id);
+    const oldIndex = section.questions.findIndex((q) => q.id === active.id);
+    const newIndex = section.questions.findIndex((q) => q.id === over.id);
 
-    const reordered = arrayMove(questions, oldIndex, newIndex);
-
-    setQuestions(reordered);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(section.questions, oldIndex, newIndex);
 
     reorderMutation.mutate(
       reordered.map((question, index) => ({
@@ -168,7 +170,7 @@ export default function SectionCard({ section, dragHandle }: Props) {
         </Stack>
         <Divider sx={{ my: 3 }} />
 
-        {questions.length === 0 && (
+        {section.questions.length === 0 && (
           <Typography color="text.secondary">
             Esta sección todavía no tiene preguntas.
           </Typography>
@@ -179,14 +181,14 @@ export default function SectionCard({ section, dragHandle }: Props) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={questions.map((q) => q.id)}
+            items={section.questions.map((q) => q.id)}
             strategy={verticalListSortingStrategy}
           >
-            {questions.map((question) => (
+            {section.questions.map((question) => (
               <SortableQuestion
                 key={question.id}
                 question={question}
-                questions={questions}
+                questions={section.questions}
               />
             ))}
           </SortableContext>

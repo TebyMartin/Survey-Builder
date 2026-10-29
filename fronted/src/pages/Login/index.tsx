@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { useLogin } from "../../hooks/useLogin";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import FormTextField from "../../components/forms/FormTextField";
 
 const schema = z.object({

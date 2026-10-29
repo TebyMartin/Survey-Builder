@@ -31,16 +31,180 @@ export class SubmissionRepository {
       throw new Error("La encuesta no pertenece a esta organización");
     }
 
-    return prisma.submission.create({
-      data: {
-        surveyId: data.surveyId,
-        assignmentId: data.assignmentId,
-        interviewerId: data.interviewerId,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        ipAddress: data.ipAddress,
-        deviceInfo: data.deviceInfo,
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "surveys"
+        WHERE "id" = ${data.surveyId}
+        FOR UPDATE
+      `;
+
+      const latestSubmission = await transaction.submission.aggregate({
+        where: { surveyId: data.surveyId },
+        _max: { formNumber: true },
+      });
+
+      return transaction.submission.create({
+        data: {
+          formNumber: (latestSubmission._max.formNumber ?? 0) + 1,
+          surveyId: data.surveyId,
+          assignmentId: data.assignmentId,
+          interviewerId: data.interviewerId,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          ipAddress: data.ipAddress,
+          deviceInfo: data.deviceInfo,
+        },
+      });
+    });
+  }
+
+  async findForReview(organizationId: string) {
+    return prisma.submission.findMany({
+      where: {
+        status: SubmissionStatus.COMPLETED,
+        interviewerId: { not: null },
+        survey: { organizationId, deletedAt: null },
       },
+      include: {
+        survey: { select: { id: true, title: true } },
+        interviewer: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        answers: {
+          include: {
+            question: {
+              include: {
+                options: true,
+                matrixRows: { orderBy: { order: "asc" } },
+                compositeFields: {
+                  orderBy: { order: "asc" },
+                  include: { options: true },
+                },
+              },
+            },
+            options: { include: { questionOption: true } },
+            matrixAnswers: { include: { row: true } },
+            compositeAnswers: { include: { field: true } },
+          },
+        },
+        reviews: {
+          orderBy: { requestedAt: "desc" },
+          include: {
+            supervisor: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+          },
+        },
+      },
+      orderBy: [{ completedAt: "desc" }, { formNumber: "desc" }],
+    });
+  }
+
+  async requestReview(
+    submissionId: string,
+    supervisorId: string,
+    organizationId: string,
+    comment: string,
+  ) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "submissions"
+        WHERE "id" = ${submissionId}
+        FOR UPDATE
+      `;
+
+      const submission = await transaction.submission.findFirst({
+        where: {
+          id: submissionId,
+          status: SubmissionStatus.COMPLETED,
+          interviewerId: { not: null },
+          survey: { organizationId, deletedAt: null },
+        },
+        select: { id: true },
+      });
+
+      if (!submission) {
+        throw new Error(
+          "No se encontró una entrevista completada para revisar.",
+        );
+      }
+
+      const activeReview = await transaction.submissionReview.findFirst({
+        where: {
+          submissionId,
+          status: "CHANGES_REQUESTED",
+        },
+        select: { id: true },
+      });
+
+      if (activeReview) {
+        throw new Error("Esta entrevista ya tiene una corrección pendiente.");
+      }
+
+      return transaction.submissionReview.create({
+        data: {
+          submissionId,
+          supervisorId,
+          comment,
+        },
+        include: {
+          supervisor: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+      });
+    });
+  }
+
+  async approveReview(
+    reviewId: string,
+    organizationId: string,
+  ) {
+    const review = await prisma.submissionReview.findFirst({
+      where: {
+        id: reviewId,
+        status: "UPDATED",
+        submission: {
+          survey: { organizationId, deletedAt: null },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new Error("Solo se pueden aprobar entrevistas ya modificadas.");
+    }
+
+    const updated = await prisma.submissionReview.updateMany({
+      where: { id: reviewId, status: "UPDATED" },
+      data: { status: "APPROVED", resolvedAt: new Date() },
+    });
+
+    if (updated.count !== 1) {
+      throw new Error("La revisión cambió mientras se intentaba aprobar.");
+    }
+
+    return prisma.submissionReview.findUniqueOrThrow({
+      where: { id: reviewId },
+    });
+  }
+
+  async markLatestReviewUpdated(submissionId: string) {
+    const latestReview = await prisma.submissionReview.findFirst({
+      where: { submissionId, status: "CHANGES_REQUESTED" },
+      orderBy: { requestedAt: "desc" },
+      select: { id: true },
+    });
+
+    if (!latestReview) {
+      return;
+    }
+
+    await prisma.submissionReview.update({
+      where: { id: latestReview.id },
+      data: { status: "UPDATED" },
     });
   }
   // =========================================================
@@ -63,10 +227,12 @@ export class SubmissionRepository {
       }[];
     }[],
     organizationId: string,
+    interviewerId?: string,
   ) {
     const submission = await prisma.submission.findFirst({
       where: {
         id: submissionId,
+        ...(interviewerId ? { interviewerId } : {}),
         survey: {
           organizationId,
           deletedAt: null,
@@ -250,11 +416,16 @@ export class SubmissionRepository {
   // COMPLETAR SUBMISSION
   // =========================================================
 
-  async complete(submissionId: string, organizationId: string) {
+  async complete(
+    submissionId: string,
+    organizationId: string,
+    interviewerId?: string,
+  ) {
     // Verificamos que pertenezca a la organización
     const submission = await prisma.submission.findFirst({
       where: {
         id: submissionId,
+        ...(interviewerId ? { interviewerId } : {}),
         survey: {
           organizationId,
           deletedAt: null,
@@ -404,6 +575,13 @@ export class SubmissionRepository {
       include: {
         submissions: {
           include: {
+            interviewer: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
             answers: {
               include: {
                 question: {
@@ -458,10 +636,12 @@ export class SubmissionRepository {
   async findSubmissionWithAnswers(
     submissionId: string,
     organizationId: string,
+    interviewerId?: string,
   ) {
     return prisma.submission.findFirst({
       where: {
         id: submissionId,
+        ...(interviewerId ? { interviewerId } : {}),
         survey: {
           organizationId,
           deletedAt: null,

@@ -44,7 +44,12 @@ export function useCreateAssignment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: any) => {
+    mutationFn: async (body: {
+      surveyId: string;
+      userId: string;
+      targetResponses: number;
+      dueDate?: string;
+    }) => {
       const { data } = await api.post("/assignments", body);
       return data;
     },

@@ -1,7 +1,12 @@
 import { Typography, Stack, Chip, Box } from "@mui/material";
 import ReportCard from "../ReportCard";
+import type { TextQuestionSummary } from "../../../types/report";
 
-export default function EmailSummary({ question }: any) {
+export default function EmailSummary({
+  question,
+}: {
+  question: TextQuestionSummary;
+}) {
   return (
     <ReportCard title={question.title}>
       <Box
@@ -24,7 +29,7 @@ export default function EmailSummary({ question }: any) {
         />
 
         <Stack spacing={1}>
-          {question.answers.map((email: string, index: number) => (
+          {question.answers.map((email, index) => (
             <Typography key={index}>{email}</Typography>
           ))}
         </Stack>

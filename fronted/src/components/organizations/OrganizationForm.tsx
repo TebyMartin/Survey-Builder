@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Box, Button, Stack, TextField } from "@mui/material";
 import type {
   CreateOrganizationData,
@@ -18,18 +18,8 @@ export default function OrganizationForm({
   onSubmit,
   onCancel,
 }: Props) {
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-
-  useEffect(() => {
-    if (organization) {
-      setName(organization.name);
-      setSlug(organization.slug);
-    } else {
-      setName("");
-      setSlug("");
-    }
-  }, [organization]);
+  const [name, setName] = useState(organization?.name ?? "");
+  const [slug, setSlug] = useState(organization?.slug ?? "");
 
   const handleNameChange = (value: string) => {
     setName(value);

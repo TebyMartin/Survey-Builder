@@ -1,8 +1,9 @@
 import { TextField } from "@mui/material";
 import QuestionContainer from "../QuestionContainer";
+import type { SurveyQuestion } from "../../../types/surveys";
 
 interface Props {
-  question: any;
+  question: SurveyQuestion;
   value: string;
   error?: string;
   onChange: (value: string) => void;

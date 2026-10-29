@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import type { SubmissionAnswerInput } from "../types/submission";
 
 export async function getPublicSurvey(token: string) {
   const { data } = await api.get(`/public/surveys/${token}`);
@@ -10,7 +11,10 @@ export async function startSubmission(token: string) {
   return data;
 }
 
-export async function saveAnswers(submissionId: string, answers: any[]) {
+export async function saveAnswers(
+  submissionId: string,
+  answers: SubmissionAnswerInput[],
+) {
   const { data } = await api.patch(
     `/public/submissions/${submissionId}/answers`,
     {

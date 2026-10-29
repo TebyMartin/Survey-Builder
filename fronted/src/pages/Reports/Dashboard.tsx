@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -14,6 +15,7 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import TodayIcon from "@mui/icons-material/Today";
 import DescriptionIcon from "@mui/icons-material/Description";
+import DownloadIcon from "@mui/icons-material/Download";
 
 import Grid from "@mui/material/Grid";
 
@@ -28,11 +30,33 @@ import type { QuestionSummary } from "../../types/report";
 
 import { generateReportPdf } from "../../utils/pdf/generateReportPdf";
 import { generateReportExcel } from "../../utils/reports/generateReportExcel";
+import { downloadSubmissionCsv } from "../../service/reports.service";
+import { toast } from "react-hot-toast";
 
 export default function ReportDashboard() {
   const { surveyId } = useParams();
 
   const { data, isLoading } = useReportDashboard(surveyId!);
+  const [exportingCsv, setExportingCsv] = useState(false);
+
+  const handleCsvExport = async () => {
+    if (!surveyId) {
+      return;
+    }
+
+    setExportingCsv(true);
+    try {
+      await downloadSubmissionCsv(surveyId);
+      toast.success("CSV de entrevistas descargado");
+    } catch (error: unknown) {
+      console.error("No se pudo exportar el CSV:", error);
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo exportar el CSV.",
+      );
+    } finally {
+      setExportingCsv(false);
+    }
+  };
 
   const formatAverageTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -185,7 +209,7 @@ export default function ReportDashboard() {
             justifyContent="center"
             alignItems="stretch"
             width="100%"
-            maxWidth={520}
+            maxWidth={720}
           >
             <Button
               fullWidth
@@ -228,6 +252,37 @@ export default function ReportDashboard() {
               }}
             >
               Exportar Excel
+            </Button>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              color="secondary"
+              startIcon={
+                exportingCsv ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  <DownloadIcon />
+                )
+              }
+              onClick={handleCsvExport}
+              disabled={exportingCsv}
+              sx={{
+                borderRadius: 3,
+                py: {
+                  xs: 1.3,
+                  sm: 1.4,
+                },
+                color: "white",
+                borderColor: "rgba(255,255,255,.5)",
+
+                "&:hover": {
+                  borderColor: "white",
+                  bgcolor: "rgba(255,255,255,.08)",
+                },
+              }}
+            >
+              CSV para QGIS
             </Button>
           </Stack>
         </Stack>

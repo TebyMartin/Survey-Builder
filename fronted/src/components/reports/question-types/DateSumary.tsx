@@ -1,7 +1,12 @@
 import { Typography, Stack, Chip, Box } from "@mui/material";
 import ReportCard from "../ReportCard";
+import type { TextQuestionSummary } from "../../../types/report";
 
-export default function DateSummary({ question }: any) {
+export default function DateSummary({
+  question,
+}: {
+  question: TextQuestionSummary;
+}) {
   return (
     <ReportCard title={question.title}>
       <Box
@@ -24,7 +29,7 @@ export default function DateSummary({ question }: any) {
         />
 
         <Stack spacing={1}>
-          {question.answers.map((date: string, index: number) => (
+          {question.answers.map((date, index) => (
             <Typography key={index}>
               {new Date(date).toLocaleDateString("es-AR")}
             </Typography>

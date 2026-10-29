@@ -21,11 +21,13 @@ import { useDuplicateQuestion } from "../../hooks/useDuplicateQuestion";
 import { useDebounce } from "../../hooks/useDebounce";
 import CompositeFieldEditor from "./CompositeFieldEditor";
 import QuestionPreview from "./QuestionPreview";
+import type { Question } from "../../types/builder";
+import type { SvgIconProps } from "@mui/material";
 
 interface Props {
-  question: any;
-  questions?: any[];
-  dragHandle?: any;
+  question: Question;
+  questions?: Question[];
+  dragHandle?: SvgIconProps;
 }
 
 const questionTypes = [
@@ -127,7 +129,7 @@ export default function QuestionCard({
   );
   const debouncedTitle = useDebounce(title, 500);
 
-  const updateMutation = useUpdateQuestion();
+  const { mutate: updateQuestion } = useUpdateQuestion();
   const deleteMutation = useDeleteQuestion();
   console.log(deleteMutation);
 
@@ -136,13 +138,13 @@ export default function QuestionCard({
   useEffect(() => {
     if (debouncedTitle === question.title) return;
 
-    updateMutation.mutate({
+    updateQuestion({
       id: question.id,
       data: {
         title: debouncedTitle,
       },
     });
-  }, [debouncedTitle]);
+  }, [debouncedTitle, question.id, question.title, updateQuestion]);
 
   return (
     <Card
@@ -166,7 +168,7 @@ export default function QuestionCard({
 
               setDescription(value);
 
-              updateMutation.mutate({
+              updateQuestion({
                 id: question.id,
                 data: {
                   description: value,
@@ -200,7 +202,7 @@ export default function QuestionCard({
             select
             value={question.type}
             onChange={(e) =>
-              updateMutation.mutate({
+              updateQuestion({
                 id: question.id,
                 data: {
                   type: e.target.value,
@@ -233,7 +235,7 @@ export default function QuestionCard({
 
                 console.log("🚨 COMPOSITE QUE VOY A GUARDAR:", fieldsToSave);
 
-                updateMutation.mutate({
+                updateQuestion({
                   id: question.id,
                   data: {
                     compositeFields: fieldsToSave,
@@ -261,7 +263,7 @@ export default function QuestionCard({
 
                     setShowWhenQuestionId(value);
 
-                    updateMutation.mutate({
+                    updateQuestion({
                       id: question.id,
                       data: {
                         showWhenQuestionId: value || null,
@@ -276,8 +278,8 @@ export default function QuestionCard({
                   <MenuItem value="">Siempre visible</MenuItem>
 
                   {questions
-                    .filter((q: any) => q.id !== question.id)
-                    .map((q: any) => (
+                    .filter((q) => q.id !== question.id)
+                    .map((q) => (
                       <MenuItem key={q.id} value={q.id}>
                         {q.title}
                       </MenuItem>
@@ -287,7 +289,7 @@ export default function QuestionCard({
                 {showWhenQuestionId &&
                   (() => {
                     const controllingQuestion = questions.find(
-                      (q: any) => q.id === showWhenQuestionId,
+                      (q) => q.id === showWhenQuestionId,
                     );
 
                     const optionTypes = [
@@ -313,7 +315,7 @@ export default function QuestionCard({
 
                             setShowWhenValue(value);
 
-                            updateMutation.mutate({
+                            updateQuestion({
                               id: question.id,
                               data: {
                                 showWhenQuestionId,
@@ -323,7 +325,7 @@ export default function QuestionCard({
                           }}
                           fullWidth
                         >
-                          {controllingQuestion.options?.map((option: any) => (
+                          {controllingQuestion.options?.map((option) => (
                             <MenuItem key={option.id} value={option.id}>
                               {option.label}
                             </MenuItem>
@@ -341,7 +343,7 @@ export default function QuestionCard({
 
                           setShowWhenValue(value);
 
-                          updateMutation.mutate({
+                          updateQuestion({
                             id: question.id,
                             data: {
                               showWhenQuestionId,
@@ -362,7 +364,7 @@ export default function QuestionCard({
               <Checkbox
                 checked={question.required}
                 onChange={(e) =>
-                  updateMutation.mutate({
+                  updateQuestion({
                     id: question.id,
                     data: {
                       required: e.target.checked,

@@ -1,11 +1,9 @@
 import { TextField } from "@mui/material";
+import type { TextFieldProps } from "@mui/material";
 
-interface Props {
-  label: string;
+type Props = Omit<TextFieldProps, "error" | "helperText"> & {
   error?: string;
-  type?: string;
-  [key: string]: any;
-}
+};
 
 export default function FormTextField({
   label,

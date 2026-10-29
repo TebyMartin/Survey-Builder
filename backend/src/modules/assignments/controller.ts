@@ -90,6 +90,16 @@ export class AssignmentsController {
         req.user!.organizationId,
       );
 
+      if (
+        req.user!.role === "INTERVIEWER" &&
+        assignment.userId !== req.user!.id
+      ) {
+        res.status(403).json({
+          message: "No tenés permiso para acceder a esta asignación.",
+        });
+        return;
+      }
+
       res.json(toAssignmentDetailResponse(assignment));
     } catch (error) {
       next(error);

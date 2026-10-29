@@ -57,13 +57,23 @@ export default function LocationMap({ locations }: LocationMapProps) {
 
             <br />
 
+            ID: {location.id}
+
+            <br />
+
             {location.interviewer ? (
               <>
                 Entrevistador: {location.interviewer.firstName}{" "}
                 {location.interviewer.lastName}
+                <br />
+                ID del encuestador: {location.interviewerId ?? location.interviewer.id}
               </>
             ) : (
-              "Entrevistador no identificado"
+              <>
+                Entrevistador no identificado
+                <br />
+                ID del encuestador: {location.interviewerId ?? "No disponible"}
+              </>
             )}
 
             <br />

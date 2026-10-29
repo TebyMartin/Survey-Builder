@@ -1,7 +1,8 @@
 import { Card, CardContent, Typography, Stack } from "@mui/material";
 import PreviewQuestion from "./PreviewQuestion";
+import type { Section } from "../../types/builder";
 interface Props {
-  section: any;
+  section: Section;
 }
 
 export default function PreviewSection({ section }: Props) {
@@ -17,7 +18,7 @@ export default function PreviewSection({ section }: Props) {
         )}
 
         <Stack spacing={3}>
-          {section.questions.map((question: any) => (
+          {section.questions.map((question) => (
             <PreviewQuestion key={question.id} question={question} />
           ))}
         </Stack>

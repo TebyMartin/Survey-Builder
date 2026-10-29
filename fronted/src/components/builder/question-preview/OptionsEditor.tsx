@@ -1,9 +1,10 @@
 import { Button, Stack, TextField } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
+import type { SurveyOption } from "../../../types/surveys";
 
 interface Props {
-  options: any[];
+  options: SurveyOption[];
 }
 
 export default function OptionsEditor({ options }: Props) {

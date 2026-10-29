@@ -1,6 +1,10 @@
 import jsPDF from "jspdf";
+import type { ReportDashboard } from "../../../types/report";
 
-export function drawHeader(doc: jsPDF, survey: any) {
+export function drawHeader(
+  doc: jsPDF,
+  survey: NonNullable<ReportDashboard["survey"]>,
+) {
   doc.setFillColor(103, 58, 183);
 
   doc.rect(0, 0, 210, 35, "F");

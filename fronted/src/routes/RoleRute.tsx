@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 
 interface Props {
   roles: string[];
@@ -26,6 +26,9 @@ export default function RoleRoute({ roles, children }: Props) {
 
       case "VIEWER":
         return <Navigate to="/dashboard" replace />;
+
+      case "SUPERVISOR":
+        return <Navigate to="/dashboard/reviews" replace />;
 
       default:
         return <Navigate to="/login" replace />;

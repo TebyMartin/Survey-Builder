@@ -125,7 +125,7 @@ export default function SurveyTable({ status, search }: Props) {
 
                 <TableCell>
                   <Typography fontWeight={600}>
-                    v{(survey as any).version}
+                    v{survey.version}
                   </Typography>
                 </TableCell>
 

@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const controller_1 = require("./controller");
+const authenticate_1 = require("../../middlewares/authenticate");
+const router = (0, express_1.Router)();
+const controller = new controller_1.SectionController();
+router.post("/", authenticate_1.authenticate, controller.create.bind(controller));
+router.post("/:id/duplicate", authenticate_1.authenticate, controller.duplicate.bind(controller));
+router.patch("/reorder", authenticate_1.authenticate, controller.reorder.bind(controller));
+router.patch("/:id", authenticate_1.authenticate, controller.update.bind(controller));
+router.delete("/:id", authenticate_1.authenticate, controller.delete.bind(controller));
+exports.default = router;

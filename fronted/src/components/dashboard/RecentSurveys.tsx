@@ -39,7 +39,17 @@ function getStatusColor(
   }
 }
 
-export default function RecentSurveys({ surveys }: any) {
+interface SurveySummary {
+  id: string;
+  title: string;
+  status: string;
+}
+
+interface Props {
+  surveys: SurveySummary[];
+}
+
+export default function RecentSurveys({ surveys }: Props) {
   return (
     <Card sx={{ borderRadius: 4, height: "100%" }}>
       <CardContent>
@@ -48,7 +58,7 @@ export default function RecentSurveys({ surveys }: any) {
         </Typography>
 
         <List>
-          {surveys.map((survey: any) => (
+          {surveys.map((survey) => (
             <ListItem
               key={survey.id}
               sx={{

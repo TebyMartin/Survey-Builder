@@ -16,6 +16,7 @@ import {
 import { useAssignments } from "../../hooks/useAssignments";
 import AssignmentRowActions from "./AssignmentRowActions";
 import AssignmentStatusChip from "./AssignmentStatusChip";
+import type { SurveyAssignment } from "../../types/assignment";
 
 interface Props {
   search: string;
@@ -24,7 +25,7 @@ interface Props {
 export default function AssignmentTable({ search }: Props) {
   const { data = [], isLoading } = useAssignments();
 
-  const assignments = data.filter((assignment: any) => {
+  const assignments = (data as SurveyAssignment[]).filter((assignment) => {
     const text = search.toLowerCase();
 
     return (
@@ -116,7 +117,7 @@ export default function AssignmentTable({ search }: Props) {
           </TableHead>
 
           <TableBody>
-            {assignments.map((assignment: any) => {
+            {assignments.map((assignment) => {
               const percentage = assignment.targetResponses
                 ? Math.round(
                     (assignment.completedResponses /

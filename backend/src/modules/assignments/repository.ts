@@ -127,6 +127,53 @@ export class AssignmentsRepository {
             email: true,
           },
         },
+
+        submissions: {
+          where: {
+            status: "COMPLETED",
+          },
+          orderBy: {
+            completedAt: "desc",
+          },
+          select: {
+            id: true,
+            formNumber: true,
+            interviewerId: true,
+            status: true,
+            completedAt: true,
+            reviews: {
+              orderBy: { requestedAt: "desc" },
+              take: 1,
+              include: {
+                supervisor: {
+                  select: { id: true, firstName: true, lastName: true },
+                },
+              },
+            },
+            answers: {
+              include: {
+                options: {
+                  select: {
+                    questionOptionId: true,
+                    value: true,
+                  },
+                },
+                matrixAnswers: {
+                  select: {
+                    rowId: true,
+                    value: true,
+                  },
+                },
+                compositeAnswers: {
+                  select: {
+                    fieldId: true,
+                    value: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -267,6 +314,13 @@ export class AssignmentsRepository {
       },
 
       include: {
+        submissions: {
+          where: {
+            status: "COMPLETED",
+            reviews: { some: { status: "CHANGES_REQUESTED" } },
+          },
+          select: { id: true },
+        },
         survey: {
           select: {
             id: true,

@@ -48,7 +48,7 @@ export default function Reports() {
     );
   }
 
-  const filteredReports = surveys.filter((survey: any) => {
+  const filteredReports = surveys.filter((survey) => {
     const text = search.toLowerCase();
 
     return (
@@ -266,7 +266,7 @@ export default function Reports() {
             mt: 2,
           }}
         >
-          {filteredReports.map((survey: any) => (
+          {filteredReports.map((survey) => (
             <Grid
               key={survey.id}
               size={{

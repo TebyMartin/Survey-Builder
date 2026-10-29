@@ -6,9 +6,10 @@ import {
   Typography,
   Chip,
 } from "@mui/material";
+import type { SurveyAssignment } from "../../types/assignment";
 
 interface Props {
-  assignments: any[];
+  assignments: SurveyAssignment[];
 }
 
 function translateStatus(status: string) {

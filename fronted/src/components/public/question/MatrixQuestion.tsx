@@ -23,7 +23,7 @@ export default function MatrixQuestion({
     <Stack spacing={2}>
       <Typography fontWeight="bold">{question.title}</Typography>
 
-      {question.matrixRows?.map((row: any) => (
+      {question.matrixRows?.map((row) => (
         <Stack key={row.id} direction="row" spacing={2} alignItems="center">
           <Typography sx={{ flex: 1 }}>{row.label}</Typography>
 

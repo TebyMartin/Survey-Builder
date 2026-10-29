@@ -12,4 +12,8 @@ export class ReportsService {
 
     return result;
   }
+
+  async submissionExport(surveyId: string, organizationId: string) {
+    return repository.getSubmissionExport(surveyId, organizationId);
+  }
 }

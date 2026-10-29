@@ -16,9 +16,10 @@ import { useCreateQuestionOption } from "../../../hooks/useCreateQuestionOption"
 import { useUpdateQuestionOption } from "../../../hooks/useUpdateQuestionOption";
 import { useDeleteQuestionOption } from "../../../hooks/useDeleteQuestionOption";
 import QuestionMatrixRowsEditor from "./QuestionMatrixRowsEditor.tsxQuestionMatrixRowsEditor";
+import type { Question } from "../../../types/builder";
 
 interface Props {
-  question: any;
+  question: Question;
 }
 
 export default function QuestionOptionsEditor({ question }: Props) {
@@ -26,9 +27,10 @@ export default function QuestionOptionsEditor({ question }: Props) {
   const updateMutation = useUpdateQuestionOption();
   const deleteMutation = useDeleteQuestionOption();
   const reorderMutation = useReorderQuestionOption();
+  const options = question.options ?? [];
 
   async function moveOption(from: number, to: number) {
-    if (to < 0 || to >= question.options.length) return;
+    if (to < 0 || to >= options.length) return;
 
     await reorderMutation.mutateAsync({
       questionId: question.id,
@@ -41,7 +43,7 @@ export default function QuestionOptionsEditor({ question }: Props) {
   }
   return (
     <Stack spacing={2} mt={2}>
-      {question.options.map((option: any) => (
+      {options.map((option) => (
         <OptionRow
           key={option.id}
           option={option}
@@ -69,8 +71,8 @@ export default function QuestionOptionsEditor({ question }: Props) {
         onClick={() =>
           createMutation.mutate({
             questionId: question.id,
-            label: `Opción ${question.options.length + 1}`,
-            order: question.options.length,
+            label: `Opción ${options.length + 1}`,
+            order: options.length,
           })
         }
       >
@@ -89,7 +91,7 @@ function OptionRow({
   onMoveDown,
   onToggleOther,
 }: {
-  option: any;
+  option: NonNullable<Question["options"]>[number];
   questionType: string;
   onSave: (label: string) => void;
   onDelete: () => void;

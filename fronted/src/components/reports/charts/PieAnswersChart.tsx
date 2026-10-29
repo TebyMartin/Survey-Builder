@@ -1,28 +1,39 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useMediaQuery, useTheme } from "@mui/material";
+import type { ChoiceAnswer } from "../../../types/report";
+import { COLORS } from "./reportColors";
 
-export const COLORS = [
-  "#1976d2",
-  "#2e7d32",
-  "#ed6c02",
-  "#9c27b0",
-  "#d32f2f",
-  "#0288d1",
-];
+interface PieLabelProps {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  outerRadius?: number;
+  value?: number;
+  index?: number;
+}
 
-export default function PieAnswersChart({ data }: any) {
+interface Props {
+  data: ChoiceAnswer[];
+}
+
+export default function PieAnswersChart({ data }: Props) {
   const theme = useTheme();
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const total = data.reduce((acc: number, item: any) => acc + item.count, 0);
+  const total = data.reduce((acc, item) => acc + item.count, 0);
 
   // ==========================================
   // LABEL PERSONALIZADO
   // ==========================================
 
-  const renderCustomizedLabel = (props: any) => {
-    const { cx, cy, midAngle, outerRadius, value, index } = props;
+  const renderCustomizedLabel = (props: PieLabelProps) => {
+    const cx = props.cx ?? 0;
+    const cy = props.cy ?? 0;
+    const midAngle = props.midAngle ?? 0;
+    const outerRadius = props.outerRadius ?? 0;
+    const value = props.value ?? 0;
+    const index = props.index ?? 0;
 
     const RADIAN = Math.PI / 180;
 
@@ -61,7 +72,7 @@ export default function PieAnswersChart({ data }: any) {
           label={!isMobile ? renderCustomizedLabel : false}
           labelLine={false}
         >
-          {data.map((_: any, index: number) => (
+          {data.map((_, index) => (
             <Cell key={index} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>

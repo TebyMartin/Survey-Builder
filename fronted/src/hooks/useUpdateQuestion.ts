@@ -5,7 +5,13 @@ export function useUpdateQuestion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof updateQuestion>[1];
+    }) =>
       updateQuestion(id, data),
 
     onSuccess: () => {

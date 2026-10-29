@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   Box,
@@ -23,33 +23,33 @@ import {
   useUpdateOrganization,
   useUpdateUser,
 } from "../../hooks/useSettings";
+import type { SettingsData } from "../../service/settings.service";
+
+function getApiErrorMessage(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("response" in error)) {
+    return undefined;
+  }
+
+  const response = error.response;
+  if (typeof response !== "object" || response === null || !("data" in response)) {
+    return undefined;
+  }
+
+  const responseData = response.data;
+  if (
+    typeof responseData !== "object" ||
+    responseData === null ||
+    !("message" in responseData) ||
+    typeof responseData.message !== "string"
+  ) {
+    return undefined;
+  }
+
+  return responseData.message;
+}
 
 export default function Settings() {
   const { data, isLoading } = useSettings();
-
-  const updateOrganizationMutation = useUpdateOrganization();
-  const updateUserMutation = useUpdateUser();
-  const changePasswordMutation = useChangePassword();
-
-  const [organizationName, setOrganizationName] = useState("");
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
-
-  useEffect(() => {
-    if (!data) return;
-
-    setOrganizationName(data.organization.name);
-
-    setFirstName(data.user.firstName);
-    setLastName(data.user.lastName);
-    setEmail(data.user.email);
-  }, [data]);
 
   if (isLoading) {
     return (
@@ -60,12 +60,27 @@ export default function Settings() {
   }
 
   if (!data) {
-    return (
-      <Typography>
-        No se pudo cargar la configuración.
-      </Typography>
-    );
+    return <Typography>No se pudo cargar la configuración.</Typography>;
   }
+
+  return <SettingsForm key={data.user.id} data={data} />;
+}
+
+function SettingsForm({ data }: { data: SettingsData }) {
+  const updateOrganizationMutation = useUpdateOrganization();
+  const updateUserMutation = useUpdateUser();
+  const changePasswordMutation = useChangePassword();
+
+  const [organizationName, setOrganizationName] = useState(
+    data.organization.name,
+  );
+  const [firstName, setFirstName] = useState(data.user.firstName);
+  const [lastName, setLastName] = useState(data.user.lastName);
+  const [email, setEmail] = useState(data.user.email);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
 
   const handleOrganizationSubmit = async () => {
     try {
@@ -74,10 +89,9 @@ export default function Settings() {
       });
 
       toast.success("Organización actualizada");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.message ??
-          "No se pudieron guardar los cambios",
+        getApiErrorMessage(error) ?? "No se pudieron guardar los cambios",
       );
     }
   };
@@ -91,10 +105,9 @@ export default function Settings() {
       });
 
       toast.success("Datos de cuenta actualizados");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.message ??
-          "No se pudieron guardar los cambios",
+        getApiErrorMessage(error) ?? "No se pudieron guardar los cambios",
       );
     }
   };
@@ -121,12 +134,12 @@ export default function Settings() {
       setCurrentPassword("");
       setNewPassword("");
       setRepeatPassword("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.message ??
-          "No se pudo cambiar la contraseña",
+        getApiErrorMessage(error) ?? "No se pudo cambiar la contraseña",
       );
     }
+
   };
 
   return (

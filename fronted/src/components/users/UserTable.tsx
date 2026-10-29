@@ -16,6 +16,7 @@ import UserRowActions from "./UserRowActions";
 import { useUsers } from "../../hooks/useUsers";
 import RoleChip from "./RoleChip";
 import StatusChip from "./StatusChip";
+import type { User } from "../../service/users.service";
 
 interface Props {
   search: string;
@@ -24,7 +25,7 @@ interface Props {
 export default function UserTable({ search }: Props) {
   const { data = [], isLoading } = useUsers();
 
-  const users = data.filter((user: any) => {
+  const users = data.filter((user: User) => {
     const text = search.toLowerCase();
 
     return (
@@ -90,7 +91,7 @@ export default function UserTable({ search }: Props) {
           </TableHead>
 
           <TableBody>
-            {users.map((user: any) => (
+            {users.map((user) => (
               <TableRow
                 key={user.id}
                 hover

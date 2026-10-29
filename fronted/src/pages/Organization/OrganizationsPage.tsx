@@ -548,6 +548,7 @@ export default function OrganizationsPage() {
           }}
         >
           <OrganizationForm
+            key={editingOrganization?.id ?? "new"}
             organization={editingOrganization}
             loading={createMutation.isPending || updateMutation.isPending}
             onSubmit={handleSubmit}

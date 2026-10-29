@@ -8,6 +8,13 @@ const router = Router();
 const controller = new ReportsController();
 
 router.get(
+  "/:surveyId/submissions.csv",
+  authenticate,
+  authorize("ADMIN", "EDITOR", "VIEWER"),
+  controller.submissionExport.bind(controller),
+);
+
+router.get(
   "/:surveyId/dashboard",
   authenticate,
   authorize("ADMIN", "EDITOR", "VIEWER"),

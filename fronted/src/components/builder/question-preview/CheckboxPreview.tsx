@@ -1,7 +1,8 @@
 import QuestionOptionsEditor from "./QuestionOptionsEditor";
+import type { Question } from "../../../types/builder";
 
 interface Props {
-  question: any;
+  question: Question;
 }
 
 export default function CheckboxPreview({ question }: Props) {

@@ -1,9 +1,10 @@
 import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
-import QuestionOptionItem from "../QuestionOptionItem";
+import QuestionOptionItem from "./question-preview/QuestionOptionItem";
+import type { SurveyOption } from "../../types/surveys";
 
 interface Props {
-  option: any;
+  option: SurveyOption;
 }
 
 export default function SortableQuestionOption({ option }: Props) {

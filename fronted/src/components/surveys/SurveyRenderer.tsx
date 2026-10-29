@@ -9,11 +9,12 @@ import {
 } from "@mui/material";
 
 import QuestionRenderer from "../interviewer/QuestionRenderer";
+import type { Survey } from "../../types/surveys";
 
 interface Props {
-  survey: any;
-  answers: Record<string, any>;
-  onAnswer: (questionId: string, value: any) => void;
+  survey: Survey;
+  answers: Record<string, unknown>;
+  onAnswer: (questionId: string, value: unknown) => void;
   onFinish?: () => void;
   loading?: boolean;
 }
@@ -25,7 +26,7 @@ export default function SurveyRenderer({
   onFinish,
   loading,
 }: Props) {
-  const shouldShowQuestion = (question: any) => {
+  const shouldShowQuestion = (question: Survey["sections"][number]["questions"][number]) => {
     if (!question.showWhenQuestionId) {
       return true;
     }
@@ -108,7 +109,7 @@ export default function SurveyRenderer({
 
           {/* SECCIONES DE LA ENCUESTA */}
           <Stack spacing={4}>
-            {survey.sections?.map((section: any) => (
+            {survey.sections?.map((section) => (
               <Card
                 key={section.id}
                 elevation={2}
@@ -126,7 +127,7 @@ export default function SurveyRenderer({
                   <Stack spacing={4}>
                     {section.questions
                       ?.filter(shouldShowQuestion)
-                      .map((question: any) => (
+                      .map((question) => (
                         <QuestionRenderer
                           key={question.id}
                           question={question}

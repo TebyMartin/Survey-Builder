@@ -1,4 +1,11 @@
 import jsPDF from "jspdf";
+import type {
+  ChoiceQuestionSummary,
+  CompositeFieldBaseSummary,
+  CompositeQuestionSummary,
+  MatrixQuestionSummary,
+  QuestionSummary,
+} from "../../../types/report";
 
 const PAGE_HEIGHT = 297;
 
@@ -13,24 +20,19 @@ const TEXT_COLOR = [0, 0, 0] as const;
 const LIGHT_BG = [250, 250, 250] as const;
 const BORDER = [220, 220, 220] as const;
 
-function getQuestionTitle(question: any): string {
-  return String(
-    question?.title ??
-      question?.question ??
-      question?.text ??
-      "Pregunta sin título",
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function getQuestionType(question: any): string {
-  return String(question?.type ?? "").toUpperCase();
+function getQuestionTitle(question: QuestionSummary): string {
+  return String(question.title || "Pregunta sin título");
 }
 
-function getAnswers(question: any): any[] {
-  return Array.isArray(question?.answers) ? question.answers : [];
+function getAnswers(question: QuestionSummary): unknown[] {
+  return question.answers;
 }
 
-function getAnswerLabel(answer: any): string {
+function getAnswerLabel(answer: unknown): string {
   if (answer === null || answer === undefined) {
     return "Sin respuesta";
   }
@@ -39,26 +41,33 @@ function getAnswerLabel(answer: any): string {
     return String(answer);
   }
 
-  return String(
-    answer?.label ??
-      answer?.value ??
-      answer?.text ??
-      answer?.answer ??
-      answer?.option ??
-      answer?.name ??
-      answer?.title ??
-      "Sin respuesta",
-  );
-}
+  if (!isRecord(answer)) {
+    return "Sin respuesta";
+  }
 
-function isOptionQuestion(type: string): boolean {
-  return ["SELECT", "RADIO", "CHECKBOX", "MULTISELECT", "SCALE"].includes(type);
+  const labelKeys = [
+    "label",
+    "value",
+    "text",
+    "answer",
+    "option",
+    "name",
+    "title",
+  ];
+  const label = labelKeys
+    .map((key) => answer[key])
+    .find(
+      (value): value is string | number =>
+        typeof value === "string" || typeof value === "number",
+    );
+
+  return label === undefined ? "Sin respuesta" : String(label);
 }
 
 function drawNewPage(doc: jsPDF, questionTitle: string): number {
   doc.addPage();
 
-  let y = TOP_MARGIN;
+  const y = TOP_MARGIN;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
@@ -102,7 +111,7 @@ function drawPercentageRow(
   doc.text(labelLines, 22, y);
 
   // Barra gris
-  doc.setFillColor(230);
+  doc.setFillColor(230, 230, 230);
 
   doc.roundedRect(70, y - 3, 90, 4, 2, 2, "F");
 
@@ -131,7 +140,7 @@ function drawPercentageRow(
 function drawMatrix(
   doc: jsPDF,
   y: number,
-  question: any,
+  question: MatrixQuestionSummary,
   title: string,
 ): number {
   const rows = question.answers ?? [];
@@ -146,10 +155,9 @@ function drawMatrix(
     return y + 12;
   }
 
-  rows.forEach((matrixRow: any) => {
-    const rowLabel = matrixRow.label ?? matrixRow.title ?? "Fila";
-
-    const values = matrixRow.values ?? [];
+  rows.forEach((matrixRow) => {
+    const rowLabel = matrixRow.label || "Fila";
+    const values = matrixRow.values;
 
     /*
      * NOMBRE DE LA FILA
@@ -185,18 +193,12 @@ function drawMatrix(
       return;
     }
 
-    const total = Number(
-      matrixRow.answered ??
-        values.reduce(
-          (acc: number, item: any) => acc + Number(item.count ?? 0),
-          0,
-        ),
-    );
+    const total = matrixRow.answered;
 
-    values.forEach((valueData: any) => {
-      const value = String(valueData.value ?? "");
+    values.forEach((valueData) => {
+      const value = valueData.value;
 
-      const count = Number(valueData.count ?? 0);
+      const count = valueData.count;
 
       if (y + 12 > PAGE_HEIGHT - BOTTOM_MARGIN) {
         y = drawNewPage(doc, title);
@@ -216,7 +218,11 @@ function drawMatrix(
  * COMPOSITE - NÚMERO
  * ============================================================
  */
-function drawCompositeNumber(doc: jsPDF, y: number, field: any): number {
+function drawCompositeNumber(
+  doc: jsPDF,
+  y: number,
+  field: CompositeFieldBaseSummary,
+): number {
   const average = field.average;
   const min = field.min;
   const max = field.max;
@@ -241,12 +247,14 @@ function drawCompositeNumber(doc: jsPDF, y: number, field: any): number {
 
   y += 8;
 
-  const values = field.values ?? [];
+  const values = field.values.filter(
+    (value): value is number => typeof value === "number",
+  );
 
   if (values.length > 0) {
     const counts: Record<string, number> = {};
 
-    values.forEach((value: any) => {
+    values.forEach((value) => {
       const key = String(value);
 
       counts[key] = (counts[key] ?? 0) + 1;
@@ -272,8 +280,34 @@ function drawCompositeNumber(doc: jsPDF, y: number, field: any): number {
  * COMPOSITE - OPCIONES
  * ============================================================
  */
-function drawCompositeOptions(doc: jsPDF, y: number, field: any): number {
-  const values = field.values ?? [];
+function isCompositeChoiceValue(
+  value: unknown,
+): value is { value: string; count: number } {
+  return (
+    isRecord(value) &&
+    typeof value.value === "string" &&
+    typeof value.count === "number"
+  );
+}
+
+function isChoiceQuestion(
+  question: QuestionSummary,
+): question is ChoiceQuestionSummary {
+  return [
+    "RADIO",
+    "CHECKBOX",
+    "SELECT",
+    "MULTISELECT",
+    "SCALE",
+  ].includes(question.type);
+}
+
+function drawCompositeOptions(
+  doc: jsPDF,
+  y: number,
+  field: CompositeFieldBaseSummary,
+): number {
+  const values = field.values.filter(isCompositeChoiceValue);
 
   if (values.length === 0) {
     doc.setFont("helvetica", "normal");
@@ -285,12 +319,9 @@ function drawCompositeOptions(doc: jsPDF, y: number, field: any): number {
     return y + 10;
   }
 
-  const total = values.reduce(
-    (acc: number, item: any) => acc + Number(item.count ?? 0),
-    0,
-  );
+  const total = values.reduce((acc, item) => acc + item.count, 0);
 
-  values.forEach((item: any) => {
+  values.forEach((item) => {
     if (y + 12 > PAGE_HEIGHT - BOTTOM_MARGIN) {
       doc.addPage();
       y = TOP_MARGIN;
@@ -299,8 +330,8 @@ function drawCompositeOptions(doc: jsPDF, y: number, field: any): number {
     y = drawPercentageRow(
       doc,
       y,
-      String(item.value ?? ""),
-      Number(item.count ?? 0),
+      item.value,
+      item.count,
       total,
     );
   });
@@ -313,8 +344,14 @@ function drawCompositeOptions(doc: jsPDF, y: number, field: any): number {
  * COMPOSITE - TEXTO / EMAIL / FECHA
  * ============================================================
  */
-function drawCompositeText(doc: jsPDF, y: number, field: any): number {
-  const values = field.values ?? [];
+function drawCompositeText(
+  doc: jsPDF,
+  y: number,
+  field: CompositeFieldBaseSummary,
+): number {
+  const values = field.values.filter(
+    (value): value is string => typeof value === "string",
+  );
 
   if (values.length === 0) {
     doc.setFont("helvetica", "normal");
@@ -326,8 +363,8 @@ function drawCompositeText(doc: jsPDF, y: number, field: any): number {
     return y + 10;
   }
 
-  values.forEach((value: any) => {
-    const text = String(value ?? "");
+  values.forEach((value) => {
+    const text = value;
 
     const lines = doc.splitTextToSize(`• ${text}`, CONTENT_WIDTH - 25);
 
@@ -358,7 +395,7 @@ function drawCompositeText(doc: jsPDF, y: number, field: any): number {
 function drawComposite(
   doc: jsPDF,
   y: number,
-  question: any,
+  question: CompositeQuestionSummary,
   title: string,
 ): number {
   const fields = question.answers ?? [];
@@ -373,8 +410,8 @@ function drawComposite(
     return y + 12;
   }
 
-  fields.forEach((field: any) => {
-    const fieldLabel = field.label ?? field.helpText ?? "Campo";
+  fields.forEach((field) => {
+    const fieldLabel = field.label || "Campo";
 
     /*
      * Comprobar espacio para el nombre
@@ -446,13 +483,12 @@ function drawComposite(
 export function drawQuestions(
   doc: jsPDF,
   initialY: number,
-  questions: any[],
+  questions: QuestionSummary[],
 ): number {
   let y = initialY;
 
   questions.forEach((question) => {
     const title = getQuestionTitle(question);
-    const type = getQuestionType(question);
     const answers = getAnswers(question);
 
     /*
@@ -509,7 +545,7 @@ export function drawQuestions(
      * ==========================================
      */
 
-    if (type === "MATRIX") {
+    if (question.type === "MATRIX") {
       y = drawMatrix(doc, y, question, title);
 
       return;
@@ -521,7 +557,7 @@ export function drawQuestions(
      * ==========================================
      */
 
-    if (type === "COMPOSITE") {
+    if (question.type === "COMPOSITE") {
       y = drawComposite(doc, y, question, title);
 
       return;
@@ -555,17 +591,15 @@ export function drawQuestions(
      * ==========================================
      */
 
-    if (isOptionQuestion(type)) {
-      const total = answers.reduce((acc: number, answer: any) => {
-        const count = Number(answer?.count ?? 0);
+    if (isChoiceQuestion(question)) {
+      const total = question.answers.reduce(
+        (acc, answer) => acc + answer.count,
+        0,
+      );
 
-        return acc + (Number.isFinite(count) ? count : 0);
-      }, 0);
-
-      answers.forEach((answer: any) => {
+      question.answers.forEach((answer) => {
         const label = getAnswerLabel(answer);
-
-        const count = Number(answer?.count ?? 0);
+        const count = answer.count;
 
         const percent = total === 0 ? 0 : Math.round((count / total) * 100);
 
@@ -597,7 +631,7 @@ export function drawQuestions(
          * BARRA GRIS
          */
 
-        doc.setFillColor(230);
+        doc.setFillColor(230, 230, 230);
 
         doc.roundedRect(70, y - 3, 90, 4, 2, 2, "F");
 
@@ -635,7 +669,7 @@ export function drawQuestions(
      * ==========================================
      */
 
-    answers.forEach((answer: any) => {
+    answers.forEach((answer) => {
       const value = getAnswerLabel(answer);
 
       const lines = doc.splitTextToSize(`• ${value}`, CONTENT_WIDTH - 16);

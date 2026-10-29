@@ -15,6 +15,28 @@ export class SubmissionService {
     return repository.getResults(surveyId, organizationId);
   }
 
+  async findForReview(organizationId: string) {
+    return repository.findForReview(organizationId);
+  }
+
+  async requestReview(
+    submissionId: string,
+    supervisorId: string,
+    organizationId: string,
+    comment: string,
+  ) {
+    return repository.requestReview(
+      submissionId,
+      supervisorId,
+      organizationId,
+      comment,
+    );
+  }
+
+  async approveReview(reviewId: string, organizationId: string) {
+    return repository.approveReview(reviewId, organizationId);
+  }
+
   // =========================================================
   // CREAR SUBMISSION
   // =========================================================
@@ -114,17 +136,28 @@ export class SubmissionService {
       }[];
     }[],
     organizationId: string,
+    interviewerId?: string,
   ) {
-    return repository.saveAnswers(submissionId, answers, organizationId);
+    return repository.saveAnswers(
+      submissionId,
+      answers,
+      organizationId,
+      interviewerId,
+    );
   }
   // =========================================================
   // COMPLETAR SUBMISSION
   // =========================================================
 
-  async complete(submissionId: string, organizationId: string) {
+  async complete(
+    submissionId: string,
+    organizationId: string,
+    interviewerId?: string,
+  ) {
     const submission = await repository.findSubmissionWithAnswers(
       submissionId,
       organizationId,
+      interviewerId,
     );
     console.log(
       "🔎 SUBMISSION ANSWERS:",
@@ -139,6 +172,7 @@ export class SubmissionService {
     // no volvemos a incrementar
     // la asignación
     if (submission.status === "COMPLETED") {
+      await repository.markLatestReviewUpdated(submissionId);
       return submission;
     }
 
@@ -188,6 +222,7 @@ export class SubmissionService {
     const completedSubmission = await repository.complete(
       submissionId,
       organizationId,
+      interviewerId,
     );
 
     // =======================================================

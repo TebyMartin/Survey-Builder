@@ -8,7 +8,14 @@ import {
 } from "@mui/material";
 
 interface Props {
-  interviewers: any[];
+  interviewers: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    _count: {
+      submissions: number;
+    };
+  }[];
 }
 
 export default function TopInterviewers({ interviewers }: Props) {

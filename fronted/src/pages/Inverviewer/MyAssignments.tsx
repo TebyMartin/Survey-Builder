@@ -9,18 +9,32 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PollIcon from "@mui/icons-material/Poll";
 import { LinearProgress } from "@mui/material";
 
+interface AssignmentProgress {
+  id: string;
+  status: string;
+  targetResponses: number;
+  completedResponses: number;
+  reviewRequestsCount?: number;
+  survey: {
+    title: string;
+  };
+}
+
 export default function MyAssignments() {
   const { data: user } = useMe();
   const { data = [], isLoading } = useMyAssignments();
+  const assignments = data as AssignmentProgress[];
 
-  const pending = data.filter((a: any) => a.status === "PENDING").length;
-
-  const completedAssignments = data.filter(
-    (a: any) => a.status === "COMPLETED",
+  const pending = assignments.filter(
+    (assignment) => assignment.status === "PENDING",
   ).length;
 
-  const totalResponses = data.reduce(
-    (acc: number, a: any) => acc + (a.completedResponses ?? 0),
+  const completedAssignments = assignments.filter(
+    (assignment) => assignment.status === "COMPLETED",
+  ).length;
+
+  const totalResponses = assignments.reduce(
+    (acc, assignment) => acc + (assignment.completedResponses ?? 0),
     0,
   );
 
@@ -28,20 +42,27 @@ export default function MyAssignments() {
     return <CircularProgress />;
   }
 
-  const totalTargetResponses = data.reduce(
-    (acc: number, a: any) => acc + (a.targetResponses ?? 0),
+  const totalTargetResponses = assignments.reduce(
+    (acc, assignment) => acc + (assignment.targetResponses ?? 0),
     0,
   );
 
-  const completedResponses = data.reduce(
-    (acc: number, a: any) => acc + (a.completedResponses ?? 0),
+  const completedResponses = assignments.reduce(
+    (acc, assignment) => acc + (assignment.completedResponses ?? 0),
     0,
   );
 
   const progress =
     totalTargetResponses > 0
-      ? Math.round((completedResponses / totalTargetResponses) * 100)
+      ? Math.min(
+          100,
+          Math.round((completedResponses / totalTargetResponses) * 100),
+        )
       : 0;
+  const remainingResponses = Math.max(
+    totalTargetResponses - completedResponses,
+    0,
+  );
 
   return (
     <>
@@ -100,6 +121,9 @@ export default function MyAssignments() {
                 {progress}%
               </Typography>
             </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Faltan {remainingResponses} entrevistas para alcanzar el objetivo.
+            </Typography>
           </Stack>
         </CardContent>
       </Card>
@@ -132,7 +156,7 @@ export default function MyAssignments() {
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  Encuestas por completar
+                  Asignaciones pendientes
                 </Typography>
               </Stack>
             </CardContent>
@@ -204,7 +228,7 @@ export default function MyAssignments() {
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  Respuestas enviadas
+                  Entrevistas individuales completadas
                 </Typography>
               </Stack>
             </CardContent>
@@ -213,7 +237,7 @@ export default function MyAssignments() {
       </Grid>
 
       <Stack spacing={3}>
-        {data.map((assignment: any) => (
+        {assignments.map((assignment) => (
           <AssignmentCard key={assignment.id} assignment={assignment} />
         ))}
       </Stack>

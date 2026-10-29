@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import type { CompositeField } from "../types/surveys";
 
 export interface CreateQuestionDTO {
   sectionId: string;
@@ -22,6 +23,10 @@ export async function updateQuestion(
     title?: string;
     type?: string;
     required?: boolean;
+    description?: string;
+    compositeFields?: CompositeField[];
+    showWhenQuestionId?: string | null;
+    showWhenValue?: string | null;
   },
 ) {
   const response = await api.patch(`/questions/${id}`, data);

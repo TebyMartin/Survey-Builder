@@ -32,7 +32,7 @@ export default function PublicQuestion({
       return (
         <TextAreaQuestion
           question={question}
-          value={value}
+          value={typeof value === "string" ? value : ""}
           onChange={onChange}
           error={error}
         />
@@ -42,7 +42,13 @@ export default function PublicQuestion({
       return (
         <NumberQuestion
           question={question}
-          value={value}
+          value={
+            typeof value === "number" || value === ""
+              ? value
+              : typeof value === "string"
+                ? Number(value)
+                : ""
+          }
           onChange={onChange}
           error={error}
         />
@@ -52,7 +58,7 @@ export default function PublicQuestion({
       return (
         <DateQuestion
           question={question}
-          value={value}
+          value={typeof value === "string" ? value : ""}
           onChange={onChange}
           error={error}
         />
@@ -62,7 +68,7 @@ export default function PublicQuestion({
       return (
         <TimeQuestion
           question={question}
-          value={value}
+          value={typeof value === "string" ? value : ""}
           onChange={onChange}
           error={error}
         />
@@ -72,7 +78,7 @@ export default function PublicQuestion({
       return (
         <DateQuestion
           question={question}
-          value={value}
+          value={typeof value === "string" ? value : ""}
           type="datetime-local"
           onChange={onChange}
           error={error}
@@ -83,7 +89,7 @@ export default function PublicQuestion({
       return (
         <RadioQuestion
           question={question}
-          value={value}
+          value={typeof value === "string" ? value : ""}
           onChange={onChange}
           error={error}
         />
@@ -93,14 +99,30 @@ export default function PublicQuestion({
       return (
         <CheckboxQuestion
           question={question}
-          value={
-            value && typeof value === "object" && !Array.isArray(value)
-              ? value
-              : {
-                  options: Array.isArray(value) ? value : [],
-                  otherText: "",
-                }
-          }
+          value={{
+            options:
+              value &&
+              typeof value === "object" &&
+              !Array.isArray(value) &&
+              "options" in value &&
+              Array.isArray(value.options)
+                ? value.options.filter(
+                    (option): option is string => typeof option === "string",
+                  )
+                : Array.isArray(value)
+                  ? value.filter(
+                      (option): option is string => typeof option === "string",
+                    )
+                  : [],
+            otherText:
+              value &&
+              typeof value === "object" &&
+              !Array.isArray(value) &&
+              "otherText" in value &&
+              typeof value.otherText === "string"
+                ? value.otherText
+                : "",
+          }}
           onChange={onChange}
           error={error}
         />
@@ -120,8 +142,15 @@ export default function PublicQuestion({
       return (
         <CheckboxQuestion
           question={question}
-          value={Array.isArray(value) ? value : []}
-          onChange={onChange}
+          value={{
+            options: Array.isArray(value)
+              ? value.filter(
+                  (option): option is string => typeof option === "string",
+                )
+              : [],
+            otherText: "",
+          }}
+          onChange={(updated) => onChange(updated.options)}
           error={error}
         />
       );

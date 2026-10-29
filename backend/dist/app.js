@@ -1,0 +1,52 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.prisma = void 0;
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const client_1 = require("@prisma/client");
+const routes_1 = __importDefault(require("./modules/auth/routes"));
+const route_1 = __importDefault(require("./modules/surverys/route"));
+const routes_2 = __importDefault(require("./modules/sections/routes"));
+const route_2 = __importDefault(require("./modules/questions/route"));
+const route_3 = __importDefault(require("./modules/question-options/route"));
+const routes_3 = __importDefault(require("./modules/questionMatrixRow/routes"));
+const routes_4 = __importDefault(require("./modules/submissions/routes"));
+const route_4 = __importDefault(require("./modules/public/route"));
+const errorHandler_1 = require("./middlewares/errorHandler");
+const route_5 = __importDefault(require("./modules/dashboard/route"));
+const routes_5 = __importDefault(require("./modules/reports/routes"));
+const routes_6 = __importDefault(require("./modules/assignments/routes"));
+const routes_7 = __importDefault(require("./modules/settings/routes"));
+const routes_8 = __importDefault(require("./modules/users/routes"));
+const corsOptions_1 = __importDefault(require("./config/corsOptions"));
+const routes_9 = __importDefault(require("./modules/organizations/routes"));
+const path_1 = __importDefault(require("path"));
+exports.prisma = new client_1.PrismaClient();
+const app = (0, express_1.default)();
+app.use((0, cors_1.default)(corsOptions_1.default));
+app.use(express_1.default.json());
+app.use("/uploads", express_1.default.static(path_1.default.join(process.cwd(), "uploads")));
+app.get("/", (_, res) => {
+    res.json({
+        message: "Survey Builder API",
+    });
+});
+app.use("/auth", routes_1.default);
+app.use("/surveys", route_1.default);
+app.use("/sections", routes_2.default);
+app.use("/questions", route_2.default);
+app.use("/question-options", route_3.default);
+app.use("/question-matrix-rows", routes_3.default);
+app.use("/api/organizations", routes_9.default);
+app.use("/submissions", routes_4.default);
+app.use("/public", route_4.default);
+app.use("/dashboard", route_5.default);
+app.use("/settings", routes_7.default);
+app.use("/reports", routes_5.default);
+app.use("/assignments", routes_6.default);
+app.use("/users", routes_8.default);
+app.use(errorHandler_1.errorHandler);
+exports.default = app;

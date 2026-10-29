@@ -1,11 +1,17 @@
 import { Typography, Stack, LinearProgress, Box, Chip } from "@mui/material";
 
 import ReportCard from "../ReportCard";
-import PieAnswersChart, { COLORS } from "../charts/PieAnswersChart";
+import PieAnswersChart from "../charts/PieAnswersChart";
+import { COLORS } from "../charts/reportColors";
+import type { ChoiceQuestionSummary } from "../../../types/report";
 
-export default function ChoiceSummary({ question }: any) {
+interface Props {
+  question: ChoiceQuestionSummary;
+}
+
+export default function ChoiceSummary({ question }: Props) {
   const total = question.answers.reduce(
-    (acc: number, a: any) => acc + a.count,
+    (acc, answer) => acc + answer.count,
     0,
   );
 
@@ -30,7 +36,7 @@ export default function ChoiceSummary({ question }: any) {
       )}
 
       <Stack spacing={3}>
-        {question.answers.map((answer: any, index: number) => {
+        {question.answers.map((answer, index) => {
           const percent =
             total === 0 ? 0 : Math.round((answer.count / total) * 100);
 

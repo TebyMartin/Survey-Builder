@@ -3,8 +3,13 @@ import { Typography, Chip, Stack, Box } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 
 import ReportCard from "../ReportCard";
+import type { TextQuestionSummary } from "../../../types/report";
 
-export default function TextSummary({ question }: any) {
+export default function TextSummary({
+  question,
+}: {
+  question: TextQuestionSummary;
+}) {
   return (
     <ReportCard title={question.title}>
       <Chip
@@ -17,7 +22,7 @@ export default function TextSummary({ question }: any) {
       />
 
       <Stack spacing={2}>
-        {question.answers.map((answer: string, index: number) => (
+        {question.answers.map((answer, index) => (
           <Box
             key={index}
             sx={{

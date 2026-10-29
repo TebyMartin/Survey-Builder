@@ -6,10 +6,12 @@ import { useEffect } from "react";
 import { useUpdateQuestionOption } from "../../../hooks/useUpdateQuestionOption";
 import { useDeleteQuestionOption } from "../../../hooks/useDeleteQuestionOption";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import type { SurveyOption } from "../../../types/surveys";
+import type { SvgIconProps } from "@mui/material";
 
 interface Props {
-  option: any;
-  dragHandle?: any;
+  option: SurveyOption;
+  dragHandle?: SvgIconProps;
 }
 
 export default function QuestionOptionItem({ option, dragHandle }: Props) {
@@ -17,20 +19,18 @@ export default function QuestionOptionItem({ option, dragHandle }: Props) {
 
   const debounced = useDebounce(label, 500);
 
-  const updateMutation = useUpdateQuestionOption();
+  const { mutate: updateOption } = useUpdateQuestionOption();
 
   const deleteMutation = useDeleteQuestionOption();
 
   useEffect(() => {
     if (debounced === option.label) return;
 
-    updateMutation.mutate({
+    updateOption({
       id: option.id,
-      data: {
-        label: debounced,
-      },
+      label: debounced,
     });
-  }, [debounced]);
+  }, [debounced, option.id, option.label, updateOption]);
 
   return (
     <Stack direction="row" spacing={1} alignItems="center">

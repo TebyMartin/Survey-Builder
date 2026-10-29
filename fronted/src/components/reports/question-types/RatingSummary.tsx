@@ -2,18 +2,23 @@ import { Typography, Stack, LinearProgress, Box, Chip } from "@mui/material";
 
 import StarIcon from "@mui/icons-material/Star";
 import ReportCard from "../ReportCard";
+import type { NpsQuestionSummary } from "../../../types/report";
 
-export default function RatingSummary({ question }: any) {
+export default function RatingSummary({
+  question,
+}: {
+  question: NpsQuestionSummary;
+}) {
   const values = question.answers.map(Number);
 
   const total = values.length;
 
   const average =
-    total === 0 ? 0 : values.reduce((a: number, b: number) => a + b, 0) / total;
+    total === 0 ? 0 : values.reduce((a, b) => a + b, 0) / total;
 
   const counts = [5, 4, 3, 2, 1].map((star) => ({
     star,
-    count: values.filter((v: number) => v === star).length,
+    count: values.filter((value) => value === star).length,
   }));
 
   return (

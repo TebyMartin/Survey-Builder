@@ -1,6 +1,7 @@
 import {
   Card,
   CardContent,
+  Alert,
   Typography,
   Stack,
   Button,
@@ -17,7 +18,16 @@ import { useNavigate } from "react-router-dom";
 import AssignmentStatusChip from "./AssignmentStatusChip";
 
 interface Props {
-  assignment: any;
+  assignment: {
+    id: string;
+    status: string;
+    completedResponses: number;
+    targetResponses: number;
+    reviewRequestsCount?: number;
+    survey: {
+      title: string;
+    };
+  };
 }
 
 export default function AssignmentCard({ assignment }: Props) {
@@ -26,16 +36,17 @@ export default function AssignmentCard({ assignment }: Props) {
   const completed = assignment.completedResponses;
   const total = assignment.targetResponses;
 
-  const progress = Math.round((completed / total) * 100);
+  const progress =
+    total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
 
-  const remaining = total - completed;
+  const remaining = Math.max(total - completed, 0);
 
   const buttonText =
-    assignment.completedResponses === 0
-      ? "Comenzar"
-      : assignment.status === "COMPLETED"
-      ? "Completada"
-      : "Continuar";
+    assignment.status === "COMPLETED"
+      ? "Ver / editar entrevistas"
+      : assignment.completedResponses === 0
+        ? "Comenzar"
+        : "Nueva entrevista";
   const progressColor =
     progress === 100
       ? "success"
@@ -117,6 +128,13 @@ export default function AssignmentCard({ assignment }: Props) {
           >
             <AssignmentStatusChip status={assignment.status} />
           </Stack>
+          {(assignment.reviewRequestsCount ?? 0) > 0 && (
+            <Alert severity="warning">
+              Tenés {assignment.reviewRequestsCount} entrevista
+              {assignment.reviewRequestsCount === 1 ? "" : "s"} para corregir.
+              Revisá las observaciones antes de modificar las respuestas.
+            </Alert>
+          )}
           <Stack spacing={1}>
             <Stack
               direction="row"
@@ -166,7 +184,6 @@ export default function AssignmentCard({ assignment }: Props) {
             <Button
               variant="contained"
               size="large"
-              disabled={assignment.status === "COMPLETED"}
               endIcon={<ArrowForwardIcon />}
               onClick={() =>
                 navigate(`/interviewer/assignments/${assignment.id}`)

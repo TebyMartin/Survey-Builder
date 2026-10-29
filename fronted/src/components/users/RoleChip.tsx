@@ -15,6 +15,9 @@ export default function RoleChip({ role }: Props) {
     case "INTERVIEWER":
       return <Chip label="Encuestador" color="success" size="small" />;
 
+    case "SUPERVISOR":
+      return <Chip label="Supervisor" color="warning" size="small" />;
+
     case "VIEWER":
       return <Chip label="Visualizador" color="default" size="small" />;
 

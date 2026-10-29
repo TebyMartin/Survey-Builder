@@ -22,4 +22,18 @@ export interface Question {
   type: string;
   required: boolean;
   order: number;
+  description?: string;
+  placeholder?: string;
+  minValue?: number;
+  maxValue?: number;
+  options?: SurveyOption[];
+  matrixRows?: SurveyMatrixRow[];
+  compositeFields?: CompositeField[];
+  showWhenQuestionId?: string | null;
+  showWhenValue?: string | null;
 }
+import type {
+  CompositeField,
+  SurveyMatrixRow,
+  SurveyOption,
+} from "./surveys";

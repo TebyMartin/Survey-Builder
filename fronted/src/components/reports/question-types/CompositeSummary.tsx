@@ -9,10 +9,29 @@ import {
   Typography,
 } from "@mui/material";
 
-import type { QuestionSummary } from "../../../types/report";
+import type { CompositeQuestionSummary } from "../../../types/report";
 
 interface Props {
-  question: QuestionSummary;
+  question: CompositeQuestionSummary;
+}
+
+interface CompositeChoiceValue {
+  value: string;
+  count: number;
+  percentage?: number;
+}
+
+function isCompositeChoiceValue(
+  value: unknown,
+): value is CompositeChoiceValue {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "value" in value &&
+    typeof value.value === "string" &&
+    "count" in value &&
+    typeof value.count === "number"
+  );
 }
 
 export default function CompositeSummary({ question }: Props) {
@@ -47,8 +66,8 @@ export default function CompositeSummary({ question }: Props) {
         </Box>
 
         <Stack spacing={3}>
-          {(question.answers ?? []).map((field: any) => {
-            const values = field.values ?? [];
+          {question.answers.map((field) => {
+            const values = field.values;
 
             return (
               <Box key={field.id}>
@@ -176,11 +195,18 @@ export default function CompositeSummary({ question }: Props) {
                         }}
                       >
                         <Stack spacing={1}>
-                          {Array.from(new Set<number>(field.values ?? []))
+                          {Array.from(
+                            new Set(
+                              values.filter(
+                                (value): value is number =>
+                                  typeof value === "number",
+                              ),
+                            ),
+                          )
                             .sort((a, b) => a - b)
                             .map((value) => {
-                              const count = (field.values ?? []).filter(
-                                (item: number) => item === value,
+                              const count = values.filter(
+                                (item) => item === value,
                               ).length;
 
                               return (
@@ -226,8 +252,8 @@ export default function CompositeSummary({ question }: Props) {
                   field.type === "CHECKBOX" ||
                   field.type === "MULTISELECT") && (
                   <Stack spacing={1.5}>
-                    {values.length > 0 ? (
-                      values.map((item: any) => {
+                    {values.some(isCompositeChoiceValue) ? (
+                      values.filter(isCompositeChoiceValue).map((item) => {
                         const percentage = (item.percentage ?? 0) * 100;
 
                         return (
@@ -288,8 +314,15 @@ export default function CompositeSummary({ question }: Props) {
                   "DATETIME",
                 ].includes(field.type) && (
                   <Stack spacing={1}>
-                    {values.length > 0 ? (
-                      values.map((value: string, index: number) => (
+                    {values.some(
+                      (value): value is string => typeof value === "string",
+                    ) ? (
+                      values
+                        .filter(
+                          (value): value is string =>
+                            typeof value === "string",
+                        )
+                        .map((value, index) => (
                         <Box
                           key={`${value}-${index}`}
                           sx={{
@@ -308,7 +341,7 @@ export default function CompositeSummary({ question }: Props) {
                             {value}
                           </Typography>
                         </Box>
-                      ))
+                        ))
                     ) : (
                       <Typography variant="body2" color="text.secondary">
                         Sin respuestas.
@@ -323,8 +356,15 @@ export default function CompositeSummary({ question }: Props) {
 
                 {field.type === "DATE" && (
                   <Stack spacing={1}>
-                    {values.length > 0 ? (
-                      values.map((value: string, index: number) => (
+                    {values.some(
+                      (value): value is string => typeof value === "string",
+                    ) ? (
+                      values
+                        .filter(
+                          (value): value is string =>
+                            typeof value === "string",
+                        )
+                        .map((value, index) => (
                         <Box
                           key={`${value}-${index}`}
                           sx={{
@@ -335,7 +375,7 @@ export default function CompositeSummary({ question }: Props) {
                         >
                           <Typography variant="body2">{value}</Typography>
                         </Box>
-                      ))
+                        ))
                     ) : (
                       <Typography variant="body2" color="text.secondary">
                         Sin respuestas.

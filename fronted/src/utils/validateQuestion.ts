@@ -2,8 +2,9 @@ import type { SurveyQuestion } from "../types/surveys";
 
 export function validateQuestion(
   question: SurveyQuestion,
-  value: any,
+  value: unknown,
 ): string | null {
+  const textValue = typeof value === "string" ? value : "";
   // Obligatorio
   if (question.required) {
     const empty =
@@ -19,13 +20,13 @@ export function validateQuestion(
 
   switch (question.type) {
     case "EMAIL":
-      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      if (textValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(textValue)) {
         return "Ingrese un email válido.";
       }
       break;
 
     case "PHONE":
-      if (value && !/^[0-9+\-\s()]+$/.test(value)) {
+      if (textValue && !/^[0-9+\-\s()]+$/.test(textValue)) {
         return "Ingrese un teléfono válido.";
       }
       break;
@@ -47,11 +48,11 @@ export function validateQuestion(
 
     case "SHORT_TEXT":
     case "LONG_TEXT":
-      if (question.minLength && value?.length < question.minLength) {
+      if (question.minLength && textValue.length < question.minLength) {
         return `Debe tener al menos ${question.minLength} caracteres.`;
       }
 
-      if (question.maxLength && value?.length > question.maxLength) {
+      if (question.maxLength && textValue.length > question.maxLength) {
         return `Máximo ${question.maxLength} caracteres.`;
       }
 

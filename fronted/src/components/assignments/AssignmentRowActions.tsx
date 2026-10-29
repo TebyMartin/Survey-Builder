@@ -8,9 +8,10 @@ import { useDeleteAssignment } from "../../hooks/useAssignments";
 
 import { useState } from "react";
 import ConfirmDialog from "../users/ConfirmDialog";
+import type { SurveyAssignment } from "../../types/assignment";
 
 interface Props {
-  assignment: any;
+  assignment: Pick<SurveyAssignment, "id">;
 }
 
 export default function AssignmentRowActions({ assignment }: Props) {

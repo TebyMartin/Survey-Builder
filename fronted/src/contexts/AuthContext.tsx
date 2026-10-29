@@ -1,27 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  organization: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-}
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  login: (token: string, user: User) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
-
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+import { useState, type ReactNode } from "react";
+import { AuthContext, type AuthUser } from "./auth-context";
 
 interface Props {
   children: ReactNode;
@@ -31,17 +9,14 @@ export function AuthProvider({ children }: Props) {
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token"),
   );
-
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<AuthUser | null>(() => {
     const storedUser = localStorage.getItem("user");
-
-    return storedUser ? JSON.parse(storedUser) : null;
+    return storedUser ? (JSON.parse(storedUser) as AuthUser) : null;
   });
 
-  function login(token: string, user: User) {
+  function login(token: string, user: AuthUser) {
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-
     setToken(token);
     setUser(user);
   }
@@ -49,7 +24,6 @@ export function AuthProvider({ children }: Props) {
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     setToken(null);
     setUser(null);
   }
@@ -67,8 +41,4 @@ export function AuthProvider({ children }: Props) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

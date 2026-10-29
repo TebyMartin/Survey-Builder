@@ -1,7 +1,12 @@
 import { Chip, CardContent, Typography, Grid } from "@mui/material";
 import ReportCard from "../ReportCard";
+import type { TextQuestionSummary } from "../../../types/report";
 
-export default function NumberSummary({ question }: any) {
+export default function NumberSummary({
+  question,
+}: {
+  question: TextQuestionSummary;
+}) {
   const values = question.answers.map(Number);
 
   const min = Math.min(...values);
@@ -9,7 +14,7 @@ export default function NumberSummary({ question }: any) {
   const max = Math.max(...values);
 
   const average =
-    values.reduce((a: number, b: number) => a + b, 0) / values.length;
+    values.reduce((a, b) => a + b, 0) / values.length;
 
   return (
     <ReportCard title={question.title}>

@@ -36,7 +36,8 @@ export default function UserForm({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("INTERVIEWER");
+  const [role, setRole] =
+    useState<CreateUserData["role"]>("INTERVIEWER");
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -53,7 +54,7 @@ export default function UserForm({
       toast.success("Usuario creado correctamente");
 
       onCancel();
-    } catch (error) {
+    } catch {
       toast.error("Error al crear el usuario");
     }
   };
@@ -121,7 +122,9 @@ export default function UserForm({
           select
           label="Rol"
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) =>
+            setRole(e.target.value as CreateUserData["role"])
+          }
           fullWidth
           sx={fieldSx}
         >
@@ -129,7 +132,9 @@ export default function UserForm({
 
           <MenuItem value="EDITOR">Editor</MenuItem>
 
-          <MenuItem value="INTERVIEWER">Entrevistador</MenuItem>
+          <MenuItem value="INTERVIEWER">Encuestador</MenuItem>
+
+          <MenuItem value="SUPERVISOR">Supervisor</MenuItem>
 
           <MenuItem value="VIEWER">Visualizador</MenuItem>
         </TextField>

@@ -19,8 +19,24 @@ export interface BaseQuestionSummary {
 ========================= */
 
 export interface ChoiceQuestionSummary extends BaseQuestionSummary {
-  type: "RADIO" | "CHECKBOX" | "SELECT" | "MULTISELECT" | "SCALE" | "COMPOSITE";
+  type: "RADIO" | "CHECKBOX" | "SELECT" | "MULTISELECT" | "SCALE";
   answers: ChoiceAnswer[];
+}
+
+export interface CompositeFieldBaseSummary {
+  id: string;
+  label: string;
+  type: string;
+  answered: number;
+  values: unknown[];
+  average?: number;
+  min?: number | null;
+  max?: number | null;
+}
+
+export interface CompositeQuestionSummary extends BaseQuestionSummary {
+  type: "COMPOSITE";
+  answers: CompositeFieldBaseSummary[];
 }
 
 /* =========================
@@ -49,12 +65,64 @@ export interface MatrixRowSummary {
   id: string;
   label: string;
   answered: number;
-  average: number;
+  values: {
+    value: string;
+    count: number;
+    percentage: number;
+  }[];
 }
 
 export interface MatrixQuestionSummary extends BaseQuestionSummary {
   type: "MATRIX";
   answers: MatrixRowSummary[];
+}
+
+export interface ReportOption {
+  id: string;
+  label: string;
+  isOther?: boolean;
+}
+
+export interface ReportSubmissionQuestion {
+  id: string;
+  title: string;
+  type: string;
+  options?: ReportOption[];
+  matrixRows?: {
+    id: string;
+    label: string;
+  }[];
+  compositeFields?: {
+    id: string;
+    label: string;
+    type: string;
+    options?: ReportOption[];
+  }[];
+}
+
+export interface ReportSubmissionAnswer {
+  questionId: string;
+  value: string | null;
+  question?: ReportSubmissionQuestion;
+  options?: {
+    questionOptionId: string;
+    value: string | null;
+    questionOption?: ReportOption | null;
+  }[];
+  compositeAnswers?: {
+    fieldId: string;
+    value: string | null;
+  }[];
+  matrixAnswers?: {
+    rowId: string;
+    value: string | null;
+  }[];
+}
+
+export interface ReportSubmission {
+  id: string;
+  completedAt: string | null;
+  answers: ReportSubmissionAnswer[];
 }
 
 /* =========================
@@ -63,6 +131,7 @@ export interface MatrixQuestionSummary extends BaseQuestionSummary {
 
 export type QuestionSummary =
   | ChoiceQuestionSummary
+  | CompositeQuestionSummary
   | NpsQuestionSummary
   | TextQuestionSummary
   | MatrixQuestionSummary;
@@ -86,6 +155,10 @@ export interface ReportStats {
 
 export interface ReportLocation {
   id: string;
+  surveyId: string;
+  assignmentId: string | null;
+  interviewerId: string | null;
+  status: string;
   latitude: number;
   longitude: number;
   completedAt: string | null;
@@ -125,5 +198,5 @@ export interface ReportDashboard {
 
   questionSummaries: QuestionSummary[];
 
-  submissions: any[];
+  submissions: ReportSubmission[];
 }

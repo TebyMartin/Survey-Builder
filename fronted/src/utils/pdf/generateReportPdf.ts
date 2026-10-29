@@ -6,11 +6,16 @@ import { drawChart } from "./section/chart";
 import { drawQuestions } from "./section/questions";
 import { drawFooter } from "./section/footer";
 import { drawCover } from "./section/cover";
+import type { ReportDashboard } from "../../types/report";
 
-export async function generateReportPdf(data: any) {
+export async function generateReportPdf(data: ReportDashboard) {
+  if (!data.survey) {
+    throw new Error("No se encontró la encuesta para generar el reporte.");
+  }
+
   const doc = new jsPDF();
 
-  drawCover(doc, data);
+  drawCover(doc, data.survey);
 
   let y = drawHeader(doc, data.survey);
 
@@ -20,12 +25,7 @@ export async function generateReportPdf(data: any) {
 
   y = drawChart(doc, y, chart);
 
-  console.log(
-    "QUESTION SUMMARIES:",
-    JSON.stringify(data.questionSummaries, null, 2),
-  );
-
-  y = drawQuestions(doc, y, data.questionSummaries);
+  drawQuestions(doc, y, data.questionSummaries);
 
   drawFooter(doc);
 

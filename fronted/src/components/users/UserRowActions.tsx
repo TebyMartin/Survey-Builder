@@ -22,9 +22,10 @@ import {
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "./ConfirmDialog";
 import UserFormDialog from "./UserFormDialog";
+import type { User } from "../../service/users.service";
 
 interface Props {
-  user: any;
+  user: User;
 }
 
 export default function UserRowActions({ user }: Props) {
@@ -121,7 +122,6 @@ export default function UserRowActions({ user }: Props) {
       <UserFormDialog
         open={openEdit}
         onClose={() => setOpenEdit(false)}
-        user={user}
       />
       <ConfirmDialog
         open={confirmOpen}

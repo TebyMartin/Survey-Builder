@@ -2,9 +2,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import SectionCard from "./SectionCard";
+import type { Section } from "../../types/builder";
 
 interface Props {
-  section: any;
+  section: Section;
 }
 
 export default function SortableSection({ section }: Props) {

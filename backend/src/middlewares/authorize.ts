@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-type Role = "ADMIN" | "EDITOR" | "INTERVIEWER" | "VIEWER";
+type Role = "ADMIN" | "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
 
 export function authorize(...allowedRoles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {

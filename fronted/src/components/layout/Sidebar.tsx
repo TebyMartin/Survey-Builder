@@ -16,7 +16,7 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
 
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { NavLink } from "react-router-dom";
 
 const adminMenuItems = [
@@ -91,6 +91,14 @@ const interviewerMenuItems = [
   },
 ];
 
+const supervisorMenuItems = [
+  {
+    text: "Revisión de entrevistas",
+    icon: <AssignmentTurnedInIcon />,
+    path: "/dashboard/reviews",
+  },
+];
+
 export default function Sidebar() {
   const { user } = useAuth();
 
@@ -107,6 +115,10 @@ export default function Sidebar() {
 
     case "INTERVIEWER":
       menuItems = interviewerMenuItems;
+      break;
+
+    case "SUPERVISOR":
+      menuItems = supervisorMenuItems;
       break;
 
     case "VIEWER":

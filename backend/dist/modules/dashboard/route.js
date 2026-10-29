@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const controller_1 = require("./controller");
+const authenticate_1 = require("../../middlewares/authenticate");
+const authorize_1 = require("../../middlewares/authorize");
+const router = (0, express_1.Router)();
+const controller = new controller_1.DashboardController();
+router.get("/", authenticate_1.authenticate, (0, authorize_1.authorize)("ADMIN", "EDITOR", "VIEWER"), controller.getStats.bind(controller));
+exports.default = router;

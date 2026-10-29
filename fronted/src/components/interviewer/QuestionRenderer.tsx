@@ -5,14 +5,23 @@ import { Rating } from "@mui/material";
 import { Button, Stack } from "@mui/material";
 import { Select, OutlinedInput } from "@mui/material";
 import { Box } from "@mui/material";
+import type { SurveyQuestion } from "../../types/surveys";
 
 interface Props {
-  question: any;
-  value: any;
-  onChange: (questionId: string, value: any) => void;
+  question: SurveyQuestion;
+  value: unknown;
+  onChange: (questionId: string, value: unknown) => void;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export default function QuestionRenderer({ question, value, onChange }: Props) {
+  const inputValue =
+    typeof value === "string" || typeof value === "number" ? value : "";
+  const valueRecord = isRecord(value) ? value : {};
+
   switch (question.type) {
     case "SHORT_TEXT":
       return (
@@ -21,7 +30,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           label={question.title}
           placeholder={question.placeholder}
           required={question.required}
-          value={value || ""}
+          value={inputValue}
           onChange={(e) => onChange(question.id, e.target.value)}
         />
       );
@@ -33,7 +42,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           type="number"
           label={question.title}
           required={question.required}
-          value={value || ""}
+          value={inputValue}
           onChange={(e) => onChange(question.id, Number(e.target.value))}
         />
       );
@@ -47,7 +56,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           label={question.title}
           placeholder={question.placeholder}
           required={question.required}
-          value={value || ""}
+          value={inputValue}
           onChange={(e) => onChange(question.id, e.target.value)}
         />
       );
@@ -58,7 +67,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           fullWidth
           type="email"
           label={question.title}
-          value={value || ""}
+          value={inputValue}
           onChange={(e) => onChange(question.id, e.target.value)}
         />
       );
@@ -69,7 +78,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           fullWidth
           type="tel"
           label={question.title}
-          value={value || ""}
+          value={inputValue}
           onChange={(e) => onChange(question.id, e.target.value)}
         />
       );
@@ -80,7 +89,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           fullWidth
           type="date"
           label={question.title}
-          value={value || ""}
+          value={inputValue}
           InputLabelProps={{
             shrink: true,
           }}
@@ -97,7 +106,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
             value={value ?? ""}
             onChange={(e) => onChange(question.id, e.target.value)}
           >
-            {question.options?.map((option: any) => (
+            {question.options?.map((option) => (
               <FormControlLabel
                 key={option.id}
                 value={option.id}
@@ -110,14 +119,19 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
       );
 
     case "CHECKBOX": {
-      const selectedOptions: string[] = value?.options ?? [];
-      const otherText: string = value?.otherText ?? "";
+      const selectedOptions = Array.isArray(valueRecord.options)
+        ? valueRecord.options.filter(
+            (option): option is string => typeof option === "string",
+          )
+        : [];
+      const otherText =
+        typeof valueRecord.otherText === "string" ? valueRecord.otherText : "";
 
       return (
         <>
           <Typography mb={1}>{question.title}</Typography>
 
-          {question.options?.map((option: any) => {
+          {question.options?.map((option) => {
             const checked = selectedOptions.includes(option.id);
 
             return (
@@ -181,7 +195,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           value={value ?? ""}
           onChange={(e) => onChange(question.id, e.target.value)}
         >
-          {question.options?.map((option: any) => (
+          {question.options?.map((option) => (
             <MenuItem key={option.id} value={option.id}>
               {option.label}
             </MenuItem>
@@ -195,7 +209,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
           <Typography mb={1}>{question.title}</Typography>
 
           <Rating
-            value={value ?? 0}
+            value={typeof value === "number" ? value : 0}
             onChange={(_, newValue) => onChange(question.id, newValue)}
           />
         </>
@@ -253,12 +267,12 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
         <Select
           multiple
           fullWidth
-          value={value ?? []}
+          value={Array.isArray(value) ? value : []}
           input={<OutlinedInput />}
           onChange={(e) => onChange(question.id, e.target.value)}
           displayEmpty
         >
-          {question.options?.map((option: any) => (
+          {question.options?.map((option) => (
             <MenuItem key={option.id} value={option.id}>
               {option.label}
             </MenuItem>
@@ -271,7 +285,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
         <Stack spacing={2}>
           <Typography>{question.title}</Typography>
 
-          {question.matrixRows?.map((row: any) => (
+          {question.matrixRows?.map((row) => (
             <Box
               key={row.id}
               sx={{
@@ -285,10 +299,10 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
               <TextField
                 type="number"
                 size="small"
-                value={value?.[row.id] ?? ""}
+                value={String(valueRecord[row.id] ?? "")}
                 onChange={(e) =>
                   onChange(question.id, {
-                    ...(value ?? {}),
+                    ...valueRecord,
                     [row.id]: e.target.value,
                   })
                 }
@@ -309,7 +323,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
         <Stack spacing={2}>
           <Typography fontWeight="bold">{question.title}</Typography>
 
-          {question.compositeFields?.map((field: any) => {
+          {question.compositeFields?.map((field) => {
             console.log("🟢 CAMPO COMPOSITE:", field);
 
             const fieldValue = value?.[field.id] ?? "";
@@ -330,7 +344,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -350,7 +364,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -368,7 +382,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -387,7 +401,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -406,7 +420,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -427,7 +441,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     }}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -448,7 +462,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     }}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -469,7 +483,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     }}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
@@ -485,12 +499,12 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                       value={fieldValue}
                       onChange={(e) =>
                         onChange(question.id, {
-                          ...(value ?? {}),
+                          ...valueRecord,
                           [field.id]: e.target.value,
                         })
                       }
                     >
-                      {field.options?.map((option: any) => (
+                      {field.options?.map((option) => (
                         <FormControlLabel
                           key={option.id ?? option.value}
                           value={option.value}
@@ -503,13 +517,19 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                 );
 
               case "CHECKBOX": {
-                const selectedOptions: string[] = fieldValue?.options ?? [];
+                const selectedOptions =
+                  isRecord(fieldValue) && Array.isArray(fieldValue.options)
+                    ? fieldValue.options.filter(
+                        (option): option is string =>
+                          typeof option === "string",
+                      )
+                    : [];
 
                 return (
                   <Box key={field.id}>
                     <Typography mb={1}>{fieldLabel}</Typography>
 
-                    {field.options?.map((option: any) => {
+                    {field.options?.map((option) => {
                       const checked = selectedOptions.includes(option.value);
 
                       return (
@@ -530,7 +550,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                                 }
 
                                 onChange(question.id, {
-                                  ...(value ?? {}),
+                                  ...valueRecord,
                                   [field.id]: {
                                     options: newOptions,
                                   },
@@ -557,12 +577,12 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     value={fieldValue}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
                   >
-                    {field.options?.map((option: any) => (
+                    {field.options?.map((option) => (
                       <MenuItem
                         key={option.id ?? option.value}
                         value={option.value}
@@ -583,12 +603,12 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                     input={<OutlinedInput />}
                     onChange={(e) =>
                       onChange(question.id, {
-                        ...(value ?? {}),
+                        ...valueRecord,
                         [field.id]: e.target.value,
                       })
                     }
                   >
-                    {field.options?.map((option: any) => (
+                    {field.options?.map((option) => (
                       <MenuItem
                         key={option.id ?? option.value}
                         value={option.value}
@@ -608,7 +628,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                       value={fieldValue || 0}
                       onChange={(_, newValue) =>
                         onChange(question.id, {
-                          ...(value ?? {}),
+                          ...valueRecord,
                           [field.id]: newValue,
                         })
                       }
@@ -628,7 +648,7 @@ export default function QuestionRenderer({ question, value, onChange }: Props) {
                           variant={fieldValue === i ? "contained" : "outlined"}
                           onClick={() =>
                             onChange(question.id, {
-                              ...(value ?? {}),
+                              ...valueRecord,
                               [field.id]: i,
                             })
                           }

@@ -1,6 +1,10 @@
 import jsPDF from "jspdf";
+import type { ReportDashboard } from "../../../types/report";
 
-export function drawCover(doc: jsPDF, data: any) {
+export function drawCover(
+  doc: jsPDF,
+  survey: NonNullable<ReportDashboard["survey"]>,
+) {
   doc.setFillColor(103, 58, 183);
   doc.rect(0, 0, 210, 297, "F");
 
@@ -22,7 +26,7 @@ export function drawCover(doc: jsPDF, data: any) {
   doc.setFontSize(28);
   doc.setFont("helvetica", "bold");
 
-  doc.text(data.survey.title, 105, 145, {
+  doc.text(survey.title, 105, 145, {
     align: "center",
   });
 

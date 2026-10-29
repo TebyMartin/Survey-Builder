@@ -19,9 +19,10 @@ import { useDeleteSurvey } from "../../hooks/useDeleteSurvey";
 import { useDuplicateSurvey } from "../../hooks/useDuplicateSurvey";
 
 import ConfirmDialog from "../users/ConfirmDialog";
+import type { Survey } from "../../types/surveys";
 
 interface Props {
-  survey: any;
+  survey: Survey;
 }
 
 export default function SurveyRowActions({ survey }: Props) {

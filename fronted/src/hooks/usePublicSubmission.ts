@@ -5,6 +5,7 @@ import {
   saveAnswers,
   completeSubmission,
 } from "../service/publicSubmission.service";
+import type { SubmissionAnswerInput } from "../types/submission";
 
 export function useStartSubmission() {
   return useMutation({
@@ -19,7 +20,7 @@ export function useSaveAnswers() {
       answers,
     }: {
       submissionId: string;
-      answers: any[];
+      answers: SubmissionAnswerInput[];
     }) => saveAnswers(submissionId, answers),
   });
 }

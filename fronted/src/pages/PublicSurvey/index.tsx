@@ -21,6 +21,12 @@ import {
 
 import PublicQuestion from "../../components/public/PublicQuestion";
 import { validateQuestion } from "../../utils/validateQuestion";
+import type { SurveyQuestion } from "../../types/surveys";
+import type { SubmissionAnswerInput } from "../../types/submission";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 export default function PublicSurvey() {
   const { token } = useParams();
@@ -33,7 +39,7 @@ export default function PublicSurvey() {
   const saveAnswers = useSaveAnswers();
   const completeSubmission = useCompleteSubmission();
 
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [completed, setCompleted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,7 +47,7 @@ export default function PublicSurvey() {
   // GUARDAR RESPUESTA
   // =========================================================
 
-  function handleAnswer(questionId: string, value: any) {
+  function handleAnswer(questionId: string, value: unknown) {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: value,
@@ -58,7 +64,7 @@ export default function PublicSurvey() {
   // LÓGICA DE PREGUNTAS CONDICIONALES
   // =========================================================
 
-  const shouldShowQuestion = (question: any) => {
+  const shouldShowQuestion = (question: SurveyQuestion) => {
     // Si no tiene condición, siempre se muestra
     if (!question.showWhenQuestionId) {
       return true;
@@ -138,10 +144,10 @@ export default function PublicSurvey() {
       // VALIDAR SOLAMENTE PREGUNTAS VISIBLES
       // =====================================================
 
-      survey.sections.forEach((section: any) => {
+      survey.sections.forEach((section) => {
         section.questions
           ?.filter(shouldShowQuestion)
-          .forEach((question: any) => {
+          .forEach((question) => {
             console.log("🔎 VALIDANDO:", {
               pregunta: question.title,
               type: question.type,
@@ -185,21 +191,19 @@ export default function PublicSurvey() {
       // PREPARAR RESPUESTAS
       // =====================================================
 
-      const formattedAnswers = Object.entries(answers).map(
+      const formattedAnswers: SubmissionAnswerInput[] = Object.entries(answers).map(
         ([questionId, value]) => {
           // =====================================================
           // MATRIX / COMPOSITE
           // =====================================================
 
           if (
-            value &&
-            typeof value === "object" &&
-            !Array.isArray(value) &&
+            isRecord(value) &&
             !Array.isArray(value.options)
           ) {
             const question = survey.sections
-              .flatMap((section: any) => section.questions)
-              .find((q: any) => q.id === questionId);
+              .flatMap((section) => section.questions)
+              .find((item) => item.id === questionId);
 
             // ===================================================
             // COMPOSITE
@@ -212,10 +216,8 @@ export default function PublicSurvey() {
                   ([fieldId, fieldValue]) => {
                     // Checkbox dentro de Composite
                     if (
-                      fieldValue &&
-                      typeof fieldValue === "object" &&
-                      !Array.isArray(fieldValue) &&
-                      "options" in fieldValue
+                      isRecord(fieldValue) &&
+                      Array.isArray(fieldValue.options)
                     ) {
                       return {
                         fieldId,
@@ -258,14 +260,19 @@ export default function PublicSurvey() {
           // =====================================================
 
           if (
-            value &&
-            typeof value === "object" &&
+            isRecord(value) &&
             Array.isArray(value.options)
           ) {
             return {
               questionId,
-              options: value.options,
-              value: value.otherText?.trim() || undefined,
+              options: value.options.filter(
+                (option): option is string =>
+                  typeof option === "string",
+              ),
+              value:
+                typeof value.otherText === "string"
+                  ? value.otherText.trim() || undefined
+                  : undefined,
             };
           }
 
@@ -276,7 +283,9 @@ export default function PublicSurvey() {
           if (Array.isArray(value)) {
             return {
               questionId,
-              options: value,
+              options: value.filter(
+                (option): option is string => typeof option === "string",
+              ),
             };
           }
 
@@ -448,7 +457,7 @@ export default function PublicSurvey() {
             SECCIONES
         ===================================================== */}
 
-        {survey.sections?.map((section: any) => (
+        {survey.sections?.map((section) => (
           <Box key={section.id} mb={5}>
             {/* TÍTULO DE SECCIÓN */}
 
@@ -468,7 +477,7 @@ export default function PublicSurvey() {
 
             {section.questions
               ?.filter(shouldShowQuestion)
-              .map((question: any) => (
+              .map((question) => (
                 <PublicQuestion
                   key={question.id}
                   question={question}

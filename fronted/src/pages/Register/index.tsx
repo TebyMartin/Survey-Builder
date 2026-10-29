@@ -147,7 +147,7 @@ export default function Register() {
       navigate("/dashboard", {
         replace: true,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
     }
   };

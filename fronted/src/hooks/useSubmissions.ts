@@ -1,9 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   completeSubmission,
   createSubmission,
   saveAnswers,
 } from "../service/submission.service";
+import type { SubmissionAnswerInput } from "../types/submission";
 
 export function useCreateSubmission() {
   return useMutation({
@@ -18,13 +19,19 @@ export function useSaveAnswers() {
       answers,
     }: {
       submissionId: string;
-      answers: any[];
+      answers: SubmissionAnswerInput[];
     }) => saveAnswers(submissionId, answers),
   });
 }
 
 export function useCompleteSubmission() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: completeSubmission,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assignment"] });
+      queryClient.invalidateQueries({ queryKey: ["myAssignments"] });
+    },
   });
 }

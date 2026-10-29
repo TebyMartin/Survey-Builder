@@ -645,6 +645,10 @@ export class ReportsBuilder {
       )
       .map((submission: any) => ({
         id: submission.id,
+        surveyId: submission.surveyId,
+        assignmentId: submission.assignmentId,
+        interviewerId: submission.interviewerId,
+        status: submission.status,
 
         latitude: submission.latitude,
         longitude: submission.longitude,

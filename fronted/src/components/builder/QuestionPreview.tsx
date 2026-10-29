@@ -19,9 +19,10 @@ import ImagePreview from "./question-preview/ImagePreview";
 import GpsPreview from "./question-preview/GpsPreview";
 import SignaturePreview from "./question-preview/SignaturePreview";
 import QuestionMatrixRowsEditor from "./question-preview/QuestionMatrixRowsEditor.tsxQuestionMatrixRowsEditor";
+import type { Question } from "../../types/builder";
 
 interface Props {
-  question: any;
+  question: Question;
 }
 
 export default function QuestionPreview({ question }: Props) {

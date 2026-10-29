@@ -2,10 +2,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 
 import QuestionCard from "./QuestionCard";
+import type { Question } from "../../types/builder";
 
 interface Props {
-  question: any;
-  questions?: any[];
+  question: Question;
+  questions?: Question[];
 }
 
 export default function SortableQuestion({ question, questions = [] }: Props) {

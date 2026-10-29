@@ -33,7 +33,7 @@ export async function restoreSurvey(id: string) {
   return data;
 }
 
-export async function getPublicSurvey(token: string) {
+export async function getPublicSurvey(token: string): Promise<Survey> {
   const { data } = await api.get(`/public/surveys/${token}`);
 
   return data;

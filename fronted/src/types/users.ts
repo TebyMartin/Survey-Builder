@@ -7,7 +7,7 @@ export interface User {
 
   email: string;
 
-  role: "ADMIN" | "EDITOR" | "INTERVIEWER" | "VIEWER";
+  role: "ADMIN" | "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
 
   isActive: boolean;
 

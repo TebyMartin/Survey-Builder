@@ -25,6 +25,7 @@ import InterviewerLayout from "../layouts/InterviewerLayout";
 import AssignmentDetail from "../components/assignments/AssignmentDetail";
 import RoleRoute from "./RoleRute";
 import MyAssignments from "../pages/Inverviewer/MyAssignments";
+import SubmissionReviews from "../pages/SubmissionReviews";
 
 export default function AppRoutes() {
   return (
@@ -43,7 +44,7 @@ export default function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <RoleRoute roles={["ADMIN", "EDITOR", "VIEWER"]}>
+            <RoleRoute roles={["ADMIN", "EDITOR", "VIEWER", "SUPERVISOR"]}>
               <DashboardLayout />
             </RoleRoute>
           </ProtectedRoute>
@@ -163,6 +164,15 @@ export default function AppRoutes() {
           element={
             <RoleRoute roles={["ADMIN"]}>
               <Settings />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="reviews"
+          element={
+            <RoleRoute roles={["SUPERVISOR"]}>
+              <SubmissionReviews />
             </RoleRoute>
           }
         />

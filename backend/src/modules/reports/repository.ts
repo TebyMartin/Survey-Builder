@@ -4,16 +4,21 @@ const prisma = new PrismaClient();
 
 export class ReportsRepository {
   async getDashboard(surveyId: string, organizationId: string) {
-    const survey = await prisma.survey.findUnique({
+    const survey = await prisma.survey.findFirst({
       where: {
         id: surveyId,
         organizationId,
+        deletedAt: null,
       },
       select: {
         id: true,
         title: true,
       },
     });
+
+    if (!survey) {
+      throw new Error("La encuesta no existe o no pertenece a esta organización.");
+    }
 
     const total = await prisma.submission.count({
       where: {
@@ -64,6 +69,10 @@ export class ReportsRepository {
       },
       select: {
         id: true,
+        surveyId: true,
+        assignmentId: true,
+        interviewerId: true,
+        status: true,
         latitude: true,
         longitude: true,
         completedAt: true,
@@ -237,5 +246,46 @@ export class ReportsRepository {
       submissions,
       lastResponse,
     };
+  }
+
+  async getSubmissionExport(surveyId: string, organizationId: string) {
+    const survey = await prisma.survey.findFirst({
+      where: {
+        id: surveyId,
+        organizationId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!survey) {
+      throw new Error("La encuesta no existe o no pertenece a esta organización.");
+    }
+
+    return prisma.submission.findMany({
+      where: {
+        surveyId: survey.id,
+      },
+      select: {
+        id: true,
+        formNumber: true,
+        interviewerId: true,
+        surveyId: true,
+        assignmentId: true,
+        latitude: true,
+        longitude: true,
+        startedAt: true,
+        completedAt: true,
+        status: true,
+        interviewer: {
+          select: { firstName: true, lastName: true },
+        },
+      },
+      orderBy: {
+        startedAt: "asc",
+      },
+    });
   }
 }

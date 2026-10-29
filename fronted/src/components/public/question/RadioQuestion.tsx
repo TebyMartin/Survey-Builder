@@ -1,8 +1,9 @@
 import { RadioGroup, FormControlLabel, Radio, Typography } from "@mui/material";
 import QuestionContainer from "../QuestionContainer";
+import type { SurveyQuestion } from "../../../types/surveys";
 
 interface Props {
-  question: any;
+  question: SurveyQuestion;
   value: string;
   onChange: (value: string) => void;
   error?: string;
@@ -20,7 +21,7 @@ export default function RadioQuestion({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
       >
-        {question.options.map((option: any) => (
+        {question.options.map((option) => (
           <FormControlLabel
             key={option.id}
             value={option.id}

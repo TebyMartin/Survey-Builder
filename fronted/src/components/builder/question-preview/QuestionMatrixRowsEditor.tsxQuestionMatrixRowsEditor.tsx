@@ -5,9 +5,10 @@ import AddIcon from "@mui/icons-material/Add";
 import { useCreateQuestionMatrixRow } from "../../../hooks/useCreateQuestionMatrixRow";
 import { useUpdateQuestionMatrixRow } from "../../../hooks/useUpdateQuestionMatrixRow";
 import { useDeleteQuestionMatrixRow } from "../../../hooks/useDeleteQuestionMatrixRow";
+import type { Question } from "../../../types/builder";
 
 interface Props {
-  question: any;
+  question: Question;
 }
 
 export default function QuestionMatrixRowsEditor({ question }: Props) {
@@ -19,7 +20,7 @@ export default function QuestionMatrixRowsEditor({ question }: Props) {
 
   return (
     <Stack spacing={2} mt={2}>
-      {rows.map((row: any, index: number) => (
+      {rows.map((row, index) => (
         <Stack key={row.id} direction="row" spacing={1} alignItems="center">
           <TextField
             fullWidth
@@ -50,7 +51,7 @@ export default function QuestionMatrixRowsEditor({ question }: Props) {
             questionId: question.id,
             label: `Fila ${rows.length + 1}`,
             order: rows.length + 1,
-          } as any)
+          })
         }
       >
         Agregar fila

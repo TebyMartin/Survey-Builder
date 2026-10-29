@@ -1,7 +1,36 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import type {
+  CompositeFieldBaseSummary,
+  ReportDashboard,
+  ReportSubmissionQuestion,
+} from "../../types/report";
 
-export async function generateReportExcel(data: any) {
+interface CompositeChoiceValue {
+  value: string;
+  count: number;
+}
+
+function isCompositeChoiceValue(value: unknown): value is CompositeChoiceValue {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "value" in value &&
+    typeof value.value === "string" &&
+    "count" in value &&
+    typeof value.count === "number"
+  );
+}
+
+function getCompositeChoiceValues(field: CompositeFieldBaseSummary) {
+  return field.values.filter(isCompositeChoiceValue);
+}
+
+export async function generateReportExcel(data: ReportDashboard) {
+  if (!data.survey) {
+    throw new Error("No se encontró la encuesta para generar el reporte.");
+  }
+
   const workbook = new ExcelJS.Workbook();
 
   workbook.creator = "Survey Builder";
@@ -58,10 +87,10 @@ export async function generateReportExcel(data: any) {
     // OBTENER TODAS LAS PREGUNTAS
     // =====================================
 
-    const questionsMap = new Map<string, any>();
+    const questionsMap = new Map<string, ReportSubmissionQuestion>();
 
-    submissions.forEach((submission: any) => {
-      (submission.answers ?? []).forEach((answer: any) => {
+    submissions.forEach((submission) => {
+      (submission.answers ?? []).forEach((answer) => {
         const question = answer.question;
 
         if (question && !questionsMap.has(question.id)) {
@@ -89,14 +118,14 @@ export async function generateReportExcel(data: any) {
       },
     ];
 
-    questions.forEach((question: any) => {
+    questions.forEach((question) => {
       // =====================================
       // COMPOSITE
       // Cada campo = una columna
       // =====================================
 
       if (question.type === "COMPOSITE") {
-        (question.compositeFields ?? []).forEach((field: any) => {
+        (question.compositeFields ?? []).forEach((field) => {
           columns.push({
             key: `${question.id}_${field.id}`,
             title: field.label || question.title,
@@ -152,12 +181,12 @@ export async function generateReportExcel(data: any) {
     // RESPUESTAS
     // =====================================
 
-    submissions.forEach((submission: any) => {
+    submissions.forEach((submission) => {
       const fecha = submission.completedAt
         ? new Date(submission.completedAt).toLocaleString("es-AR")
         : "";
 
-      const rowValues: any[] = [];
+      const rowValues: (string | number | boolean | Date | null)[] = [];
 
       columns.forEach((column) => {
         // =====================================
@@ -169,8 +198,8 @@ export async function generateReportExcel(data: any) {
           return;
         }
 
-        const answer = (submission.answers ?? []).find(
-          (item: any) => item.questionId === column.questionId,
+        const answer = submission.answers.find(
+          (item) => item.questionId === column.questionId,
         );
 
         // =====================================
@@ -188,7 +217,7 @@ export async function generateReportExcel(data: any) {
 
         if (answer.question?.type === "COMPOSITE" && column.fieldId) {
           const compositeAnswer = (answer.compositeAnswers ?? []).find(
-            (item: any) => item.fieldId === column.fieldId,
+            (item) => item.fieldId === column.fieldId,
           );
 
           if (!compositeAnswer) {
@@ -208,13 +237,13 @@ export async function generateReportExcel(data: any) {
 
               if (Array.isArray(parsed)) {
                 const field = answer.question?.compositeFields?.find(
-                  (item: any) => item.id === column.fieldId,
+                  (item) => item.id === column.fieldId,
                 );
 
                 const labels = parsed
-                  .map((optionId: any) => {
+                  .map((optionId: unknown) => {
                     const option = field?.options?.find(
-                      (item: any) => item.id === optionId,
+                      (item) => item.id === String(optionId),
                     );
 
                     if (!option) {
@@ -246,11 +275,11 @@ export async function generateReportExcel(data: any) {
             column.type === "SCALE"
           ) {
             const field = answer.question?.compositeFields?.find(
-              (item: any) => item.id === column.fieldId,
+              (item) => item.id === column.fieldId,
             );
 
             const option = field?.options?.find(
-              (item: any) => item.id === value,
+              (item) => item.id === value,
             );
 
             if (option?.isOther) {
@@ -272,9 +301,9 @@ export async function generateReportExcel(data: any) {
           const matrixAnswers = answer.matrixAnswers ?? [];
 
           const matrixValues = matrixAnswers
-            .map((matrixAnswer: any) => {
+            .map((matrixAnswer) => {
               const matrixRow = answer.question?.matrixRows?.find(
-                (row: any) => row.id === matrixAnswer.rowId,
+                (row) => row.id === matrixAnswer.rowId,
               );
 
               if (!matrixRow) {
@@ -295,7 +324,7 @@ export async function generateReportExcel(data: any) {
 
         if (column.type === "CHECKBOX" || column.type === "MULTISELECT") {
           const values = (answer.options ?? [])
-            .map((answerOption: any) => {
+            .map((answerOption) => {
               const option = answerOption.questionOption;
 
               if (!option) {
@@ -324,7 +353,7 @@ export async function generateReportExcel(data: any) {
         // =====================================
 
         const option = answer.question?.options?.find(
-          (opt: any) => opt.id === answer.value,
+          (opt) => opt.id === answer.value,
         );
 
         // =====================================
@@ -333,7 +362,7 @@ export async function generateReportExcel(data: any) {
 
         if (option?.isOther) {
           const otherOption = (answer.options ?? []).find(
-            (answerOption: any) => answerOption.questionOptionId === option.id,
+            (answerOption) => answerOption.questionOptionId === option.id,
           );
 
           const otherText =
@@ -457,16 +486,16 @@ export async function generateReportExcel(data: any) {
   // ESTADÍSTICAS
   // =====================================
 
-  data.questionSummaries.forEach((question: any) => {
+  data.questionSummaries.forEach((question) => {
     // =====================================
     // MATRIX
     // =====================================
 
     if (question.type === "MATRIX") {
-      (question.answers ?? []).forEach((matrixRow: any) => {
+      question.answers.forEach((matrixRow) => {
         const answered = matrixRow.answered ?? 0;
 
-        (matrixRow.values ?? []).forEach((valueData: any) => {
+        matrixRow.values.forEach((valueData) => {
           const count = Number(valueData.count ?? 0);
 
           const percentage = answered > 0 ? count / answered : 0;
@@ -497,7 +526,7 @@ export async function generateReportExcel(data: any) {
     // =====================================
 
     if (question.type === "COMPOSITE") {
-      (question.answers ?? []).forEach((field: any) => {
+      question.answers.forEach((field) => {
         // NUMBER
         if (field.type === "NUMBER") {
           stats.getCell(`A${row}`).value = `${question.title} - ${field.label}`;
@@ -527,8 +556,11 @@ export async function generateReportExcel(data: any) {
           row++;
 
           // Valores ingresados
-          const valueCounts = (field.values ?? []).reduce(
-            (acc: Record<string, number>, value: number) => {
+          const numericValues = field.values.filter(
+            (value): value is number => typeof value === "number",
+          );
+          const valueCounts = numericValues.reduce(
+            (acc: Record<string, number>, value) => {
               const key = String(value);
 
               acc[key] = (acc[key] ?? 0) + 1;
@@ -573,7 +605,7 @@ export async function generateReportExcel(data: any) {
         ) {
           const answered = field.answered ?? 0;
 
-          (field.values ?? []).forEach((valueData: any) => {
+          getCompositeChoiceValues(field).forEach((valueData) => {
             const count = Number(valueData.count ?? 0);
 
             const percentage = answered > 0 ? count / answered : 0;
@@ -600,7 +632,9 @@ export async function generateReportExcel(data: any) {
 
         // TEXTO / EMAIL / FECHA
         if (["SHORT_TEXT", "LONG_TEXT", "EMAIL", "DATE"].includes(field.type)) {
-          (field.values ?? []).forEach((value: any) => {
+          field.values
+            .filter((value): value is string => typeof value === "string")
+            .forEach((value) => {
             stats.getCell(
               `A${row}`,
             ).value = `${question.title} - ${field.label}`;
@@ -612,7 +646,7 @@ export async function generateReportExcel(data: any) {
             stats.getCell(`D${row}`).value = "";
 
             row++;
-          });
+            });
 
           row++;
 
@@ -634,7 +668,7 @@ export async function generateReportExcel(data: any) {
     ) {
       const answered = question.answered ?? 0;
 
-      (question.answers ?? []).forEach((answer: any) => {
+      question.answers.forEach((answer) => {
         const count = Number(answer.count ?? 0);
 
         const percentage = answered > 0 ? count / answered : 0;

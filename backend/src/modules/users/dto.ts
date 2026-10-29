@@ -3,7 +3,7 @@ export interface CreateUserDto {
   lastName: string;
   email: string;
   password: string;
-  role: "ADMIN" | "EDITOR" | "INTERVIEWER" | "VIEWER";
+  role: "ADMIN" | "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
 }
 
 export interface UpdateUserDto {
@@ -11,6 +11,6 @@ export interface UpdateUserDto {
   lastName?: string;
   email?: string;
   password?: string;
-  role?: "ADMIN" | "EDITOR" | "INTERVIEWER" | "VIEWER";
+  role?: "ADMIN" | "EDITOR" | "INTERVIEWER" | "SUPERVISOR" | "VIEWER";
   isActive?: boolean;
 }

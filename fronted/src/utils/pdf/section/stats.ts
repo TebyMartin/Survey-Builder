@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
+import type { ReportStats } from "../../../types/report";
 
-export function drawStats(doc: jsPDF, y: number, stats: any) {
+export function drawStats(doc: jsPDF, y: number, stats: ReportStats) {
   const cards = [
     ["Respuestas", stats.totalResponses],
     ["Completadas", stats.completed],

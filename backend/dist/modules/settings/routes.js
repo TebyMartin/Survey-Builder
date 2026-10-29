@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authenticate_1 = require("../../middlewares/authenticate");
+const authorize_1 = require("../../middlewares/authorize");
+const constroller_1 = require("./constroller");
+const router = (0, express_1.Router)();
+const controller = new constroller_1.SettingsController();
+router.use(authenticate_1.authenticate);
+router.get("/", (0, authorize_1.authorize)("ADMIN"), controller.get.bind(controller));
+router.patch("/organization", (0, authorize_1.authorize)("ADMIN"), controller.updateOrganization.bind(controller));
+router.patch("/user", (0, authorize_1.authorize)("ADMIN"), controller.updateUser.bind(controller));
+router.patch("/password", (0, authorize_1.authorize)("ADMIN"), controller.changePassword.bind(controller));
+exports.default = router;

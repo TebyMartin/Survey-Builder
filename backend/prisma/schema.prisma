@@ -16,6 +16,7 @@ enum UserRole {
   ADMIN
   EDITOR
   INTERVIEWER
+  SUPERVISOR
   VIEWER
 }
 
@@ -44,6 +45,7 @@ model Organization {
 
   @@map("organizations")
 }
+
 model User {
   id String @id @default(uuid())
 
@@ -70,7 +72,8 @@ model User {
 
   createdSurveys Survey[] @relation("SurveyCreator")
 
-  submissions Submission[] @relation("InterviewerSubmissions")
+  submissions       Submission[]       @relation("InterviewerSubmissions")
+  submissionReviews SubmissionReview[] @relation("SubmissionReviewSupervisor")
 
   @@index([organizationId])
   @@map("users")
@@ -82,22 +85,22 @@ model SurveyAssignment {
   surveyId String
   userId   String
 
-  status AssignmentStatus @default(PENDING)
-   // NUEVO
-  targetResponses Int @default(1)
+  status          AssignmentStatus @default(PENDING)
+  // NUEVO
+  targetResponses Int              @default(1)
 
   // NUEVO
-  completedResponses Int @default(0)
-  assignedAt  DateTime  @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-  dueDate     DateTime?
+  completedResponses Int       @default(0)
+  assignedAt         DateTime  @default(now())
+  startedAt          DateTime?
+  completedAt        DateTime?
+  dueDate            DateTime?
 
   survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
   submissions Submission[]
- 
+
   @@index([surveyId])
   @@index([userId])
   @@map("survey_assignments")
@@ -198,8 +201,8 @@ enum QuestionType {
 }
 
 model Question {
-  id        String @id @default(uuid())
-  sectionId String
+  id          String       @id @default(uuid())
+  sectionId   String
   description String?
   title       String
   type        QuestionType
@@ -223,11 +226,12 @@ model Question {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  section    Section             @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  options    QuestionOption[]
-  answers    Answer[]
-  matrixRows QuestionMatrixRow[]
+  section         Section             @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  options         QuestionOption[]
+  answers         Answer[]
+  matrixRows      QuestionMatrixRow[]
   compositeFields CompositeField[]
+
   @@unique([sectionId, order])
   @@index([type])
   @@index([sectionId])
@@ -240,10 +244,10 @@ model CompositeField {
   questionId String
 
   label String
-  type QuestionType
+  type  QuestionType
 
   placeholder String?
-  helpText String?
+  helpText    String?
 
   minLength Int?
   maxLength Int?
@@ -269,6 +273,7 @@ model CompositeField {
   @@index([questionId])
   @@map("composite_fields")
 }
+
 model CompositeFieldOption {
   id String @id @default(uuid())
 
@@ -277,7 +282,7 @@ model CompositeFieldOption {
   label String
   value String?
 
-  isOther Boolean @default(false)
+  isOther  Boolean @default(false)
   isActive Boolean @default(true)
 
   order Int
@@ -296,12 +301,12 @@ model CompositeAnswer {
   id String @id @default(uuid())
 
   answerId String
-  fieldId String
+  fieldId  String
 
   value String?
 
-  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  field CompositeField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  answer Answer         @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  field  CompositeField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -311,6 +316,7 @@ model CompositeAnswer {
   @@index([fieldId])
   @@map("composite_answers")
 }
+
 model QuestionOption {
   id String @id @default(uuid())
 
@@ -338,7 +344,7 @@ model QuestionOption {
 }
 
 model QuestionMatrixRow {
-  id         String @id @default(uuid())
+  id         String  @id @default(uuid())
   questionId String
   label      String
   value      String?
@@ -359,11 +365,18 @@ enum SubmissionStatus {
   ABANDONED
 }
 
+enum SubmissionReviewStatus {
+  CHANGES_REQUESTED
+  UPDATED
+  APPROVED
+}
+
 model Submission {
   id String @id @default(uuid())
 
-  surveyId String
-  assignmentId String?
+  formNumber      Int
+  surveyId        String
+  assignmentId    String?
   interviewerId   String?
   respondentName  String?
   respondentEmail String?
@@ -380,18 +393,39 @@ model Submission {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   survey Survey @relation(fields: [surveyId], references: [id])
 
-  interviewer User? @relation("InterviewerSubmissions", fields: [interviewerId], references: [id])
-  assignment SurveyAssignment? @relation(fields: [assignmentId], references: [id])
-  answers Answer[]
+  interviewer User?              @relation("InterviewerSubmissions", fields: [interviewerId], references: [id])
+  assignment  SurveyAssignment?  @relation(fields: [assignmentId], references: [id])
+  answers     Answer[]
+  reviews     SubmissionReview[]
+
+  @@unique([surveyId, formNumber])
   @@index([assignmentId])
   @@index([surveyId])
   @@index([status])
   @@index([startedAt])
   @@index([interviewerId])
   @@map("submissions")
+}
+
+model SubmissionReview {
+  id           String                 @id @default(uuid())
+  submissionId String
+  supervisorId String
+  comment      String
+  status       SubmissionReviewStatus @default(CHANGES_REQUESTED)
+  requestedAt  DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  resolvedAt   DateTime?
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  supervisor User       @relation("SubmissionReviewSupervisor", fields: [supervisorId], references: [id])
+
+  @@index([submissionId, requestedAt])
+  @@index([supervisorId])
+  @@map("submission_reviews")
 }
 
 model Answer {
@@ -412,11 +446,12 @@ model Answer {
 
   @@unique([submissionId, questionId])
 }
+
 model AnswerMatrix {
-  id         String @id @default(uuid())
-  answerId   String
-  rowId      String
-  value      String?
+  id       String  @id @default(uuid())
+  answerId String
+  rowId    String
+  value    String?
 
   answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
 
@@ -431,7 +466,7 @@ model AnswerMatrix {
 model AnswerOption {
   id String @id @default(uuid())
 
-  answerId String
+  answerId         String
   questionOptionId String
 
   value String?
@@ -439,7 +474,7 @@ model AnswerOption {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  answer Answer @relation(fields: [answerId], references: [id])
+  answer         Answer         @relation(fields: [answerId], references: [id])
   questionOption QuestionOption @relation(fields: [questionOptionId], references: [id])
 
   @@unique([answerId, questionOptionId])

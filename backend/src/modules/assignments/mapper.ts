@@ -11,6 +11,7 @@ export function toAssignmentResponse(assignment: any) {
 
     targetResponses: assignment.targetResponses,
     completedResponses: assignment.completedResponses,
+    reviewRequestsCount: assignment.submissions?.length ?? 0,
 
     survey: assignment.survey && {
       id: assignment.survey.id,
